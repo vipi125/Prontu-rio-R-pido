@@ -1,8 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#2c3e50">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <title>Prontuário Rápido - Protocolos Médicos</title>
     <style>
         :root {
@@ -12,103 +14,331 @@
             --success: #27ae60;
             --bg: #f4f7f6;
             --text: #333;
+            --sidebar-width: 280px;
+            --topbar-height: 56px;
         }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; height: 100vh; margin: 0; background-color: var(--bg); color: var(--text); overflow: hidden; }
-        .sidebar { width: 280px; background: var(--primary); color: white; padding: 20px 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-        .sidebar h2 { font-size: 1.2rem; margin-bottom: 10px; text-align: center; border-bottom: 1px solid var(--secondary); padding-bottom: 10px; }
-        .category-title { font-size: 0.85rem; color: #bdc3c7; text-transform: uppercase; margin-top: 15px; margin-bottom: 5px; letter-spacing: 1px; }
-        .nav-btn { display: block; width: 100%; text-align: left; background: var(--secondary); color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 6px; font-size: 13px; transition: background 0.2s; }
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body { height: 100%; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .app {
+            display: flex;
+            height: 100vh;
+            height: 100dvh;
+            width: 100%;
+            overflow: hidden;
+        }
+        .mobile-header {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: calc(var(--topbar-height) + env(safe-area-inset-top, 0px));
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-left: calc(8px + env(safe-area-inset-left, 0px));
+            padding-right: calc(15px + env(safe-area-inset-right, 0px));
+            background: var(--primary);
+            color: #fff;
+            align-items: center;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .menu-toggle {
+            background: transparent;
+            border: none;
+            color: #fff;
+            padding: 8px 10px;
+            margin-right: 6px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
+            transition: background 0.15s;
+        }
+        .menu-toggle:hover,
+        .menu-toggle:focus-visible { background: var(--secondary); outline: none; }
+        .menu-toggle:active { background: var(--accent); }
+        .mobile-title { font-weight: 700; font-size: 1.05rem; letter-spacing: 0.3px; }
+        .backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .backdrop.show { display: block; }
+        .sidebar {
+            width: var(--sidebar-width);
+            flex-shrink: 0;
+            background: var(--primary);
+            color: #fff;
+            padding: 20px 15px;
+            padding-top: calc(20px + env(safe-area-inset-top, 0px));
+            padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .sidebar h2 {
+            font-size: 1.2rem;
+            margin: 0 0 10px 0;
+            text-align: center;
+            border-bottom: 1px solid var(--secondary);
+            padding-bottom: 10px;
+        }
+        .category-title {
+            font-size: 0.85rem;
+            color: #bdc3c7;
+            text-transform: uppercase;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+        }
+        .nav-btn {
+            display: block;
+            width: 100%;
+            text-align: left;
+            background: var(--secondary);
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: inherit;
+            transition: background 0.2s;
+            touch-action: manipulation;
+        }
         .nav-btn:hover { background: var(--accent); }
+        .nav-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
         .nav-btn.active { background: var(--accent); font-weight: bold; }
-        .copyright { margin-top: auto; padding-top: 20px; font-size: 11px; text-align: center; color: #7f8c8d; border-top: 1px solid var(--secondary); }
-        .content { flex: 1; padding: 30px; overflow-y: auto; }
+        .copyright {
+            margin-top: auto;
+            padding-top: 20px;
+            font-size: 11px;
+            text-align: center;
+            color: #7f8c8d;
+            border-top: 1px solid var(--secondary);
+        }
+        .content {
+            flex: 1;
+            min-width: 0;
+            padding: 30px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-y: contain;
+        }
         .section { display: none; animation: fadeIn 0.3s ease-in-out; }
         .section.active { display: block; }
-        .section-title { margin-top: 0; color: var(--primary); border-bottom: 2px solid var(--accent); padding-bottom: 10px; margin-bottom: 20px; }
-        .item { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 20px; position: relative; }
-        .item h3 { margin-top: 0; font-size: 16px; color: var(--secondary); margin-bottom: 15px; padding-right: 80px; }
-        .item pre { white-space: pre-wrap; font-family: 'Consolas', 'Monaco', monospace; font-size: 13px; line-height: 1.5; color: #444; background: #f8f9fa; padding: 15px; border-left: 4px solid var(--accent); border-radius: 0 4px 4px 0; margin: 0; overflow-x: auto; }
-        .copy-btn { position: absolute; top: 20px; right: 20px; background: var(--accent); color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: bold; transition: background 0.2s; }
+        .section-title {
+            margin-top: 0;
+            color: var(--primary);
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .item {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .item h3 {
+            margin-top: 0;
+            font-size: 16px;
+            color: var(--secondary);
+            margin-bottom: 15px;
+            padding-right: 90px;
+        }
+        .item pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #444;
+            background: #f8f9fa;
+            padding: 15px;
+            border-left: 4px solid var(--accent);
+            border-radius: 0 4px 4px 0;
+            margin: 0;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 8px 15px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: bold;
+            font-family: inherit;
+            transition: background 0.2s;
+            touch-action: manipulation;
+            white-space: nowrap;
+        }
         .copy-btn:hover { background: #2980b9; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .copy-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+        .copy-btn:active { transform: scale(0.97); }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @media (max-width: 900px) {
+            .mobile-header { display: flex; }
+            .sidebar {
+                position: fixed;
+                top: 0; left: 0; bottom: 0;
+                width: var(--sidebar-width);
+                max-width: 85vw;
+                transform: translateX(-100%);
+                transition: transform 0.28s ease;
+                z-index: 1001;
+                will-change: transform;
+                box-shadow: 2px 0 12px rgba(0,0,0,0.2);
+            }
+            .sidebar.open { transform: translateX(0); }
+            .content {
+                padding:
+                    calc(var(--topbar-height) + env(safe-area-inset-top, 0px) + 20px)
+                    calc(15px + env(safe-area-inset-right, 0px))
+                    calc(20px + env(safe-area-inset-bottom, 0px))
+                    calc(15px + env(safe-area-inset-left, 0px));
+            }
+            .item { padding: 15px; }
+            .item h3 { font-size: 15px; padding-right: 85px; }
+            .item pre { font-size: 12.5px; padding: 12px; }
+        }
+        @media (max-width: 480px) {
+            .section-title { font-size: 1.15rem; }
+            .item { padding: 12px; border-radius: 6px; }
+            .item h3 { font-size: 14px; padding-right: 78px; line-height: 1.35; }
+            .copy-btn { top: 12px; right: 12px; padding: 6px 10px; font-size: 11.5px; }
+            .item pre { font-size: 12px; padding: 10px; line-height: 1.45; }
+            .nav-btn { padding: 12px 15px; font-size: 14px; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
     </style>
 </head>
 <body>
 
-    <div class="sidebar">
+<div class="app">
+
+    <header class="mobile-header">
+        <button class="menu-toggle" id="menuBtn" aria-label="Abrir menu" aria-expanded="false" aria-controls="sidebar">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <line x1="3" y1="12" x2="21" y2="12"/>
+                <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+        </button>
+        <span class="mobile-title">Prontuário Rápido</span>
+    </header>
+
+    <div class="backdrop" id="backdrop"></div>
+
+    <aside class="sidebar" id="sidebar">
         <h2>Prontuário Rápido</h2>
-        
-        <div class="category-title">Emergência & UTI</div>
-        <button class="nav-btn active" onclick="showSection('admissao', this)">Admissão & Exames Físicos</button>
-        <button class="nav-btn" onclick="showSection('trauma', this)">Trauma & Reanimação</button>
-        <button class="nav-btn" onclick="showSection('cardiologia', this)">Cardiologia & Vascular</button>
-        <button class="nav-btn" onclick="showSection('dva-sedacao', this)">DVA, Sedação & IOT</button>
-        <button class="nav-btn" onclick="showSection('pcr-sepse', this)">PCR, Óbito & Sepse</button>
+
+        <div class="category-title">Emergência &amp; UTI</div>
+        <button class="nav-btn active" onclick="showSection('admissao', this)">Admissão &amp; Exames Físicos</button>
+        <button class="nav-btn" onclick="showSection('trauma', this)">Trauma &amp; Reanimação</button>
+        <button class="nav-btn" onclick="showSection('cardiologia', this)">Cardiologia &amp; Vascular</button>
+        <button class="nav-btn" onclick="showSection('dva-sedacao', this)">DVA, Sedação &amp; IOT</button>
+        <button class="nav-btn" onclick="showSection('pcr-sepse', this)">PCR, Óbito &amp; Sepse</button>
         <button class="nav-btn" onclick="showSection('procedimentos', this)">Procedimentos Invasivos</button>
 
         <div class="category-title">Ambulatório</div>
-        <button class="nav-btn" onclick="showSection('ivas', this)">IVAS & Respiratório</button>
-        <button class="nav-btn" onclick="showSection('infecto', this)">Infectologia & Gastro</button>
-        <button class="nav-btn" onclick="showSection('has-dm', this)">HAS, DM & Crônicas</button>
-        <button class="nav-btn" onclick="showSection('sintomaticos', this)">Analgesia & Sintomáticos</button>
-        <button class="nav-btn" onclick="showSection('oftalmo-oto', this)">Oftalmologia & Otorrino</button>
+        <button class="nav-btn" onclick="showSection('ivas', this)">IVAS &amp; Respiratório</button>
+        <button class="nav-btn" onclick="showSection('infecto', this)">Infectologia &amp; Gastro</button>
+        <button class="nav-btn" onclick="showSection('has-dm', this)">HAS, DM &amp; Crônicas</button>
+        <button class="nav-btn" onclick="showSection('sintomaticos', this)">Analgesia &amp; Sintomáticos</button>
+        <button class="nav-btn" onclick="showSection('oftalmo-oto', this)">Oftalmologia &amp; Otorrino</button>
 
-        <div class="category-title">Pediatria & GO</div>
+        <div class="category-title">Pediatria &amp; GO</div>
         <button class="nav-btn" onclick="showSection('pediatria', this)">Pediatria (Urgências)</button>
         <button class="nav-btn" onclick="showSection('macetes-ped', this)">Macetes Pediatria</button>
-        <button class="nav-btn" onclick="showSection('gineco', this)">Ginecologia & ISTs</button>
+        <button class="nav-btn" onclick="showSection('gineco', this)">Ginecologia &amp; ISTs</button>
         <button class="nav-btn" onclick="showSection('obstetricia', this)">Obstetrícia (Rotina/Urg)</button>
 
         <div class="category-title">Complementares</div>
-        <button class="nav-btn" onclick="showSection('ortopedia', this)">Ortopedia & Trauma</button>
+        <button class="nav-btn" onclick="showSection('ortopedia', this)">Ortopedia &amp; Trauma</button>
         <button class="nav-btn" onclick="showSection('hidroeletroliticos', this)">Distúrbios Hidroeletrolíticos</button>
-        <button class="nav-btn" onclick="showSection('peconhentos', this)">Peçonhentos & Psiquiatria</button>
+        <button class="nav-btn" onclick="showSection('peconhentos', this)">Peçonhentos &amp; Psiquiatria</button>
         <button class="nav-btn" onclick="showSection('antibioticos', this)">Guia de Antibióticos</button>
-        <button class="nav-btn" onclick="showSection('exames-img', this)">Laudos & Exames de Imagem</button>
+        <button class="nav-btn" onclick="showSection('exames-img', this)">Laudos &amp; Exames de Imagem</button>
 
         <div class="copyright">
-            &copy; 2026 Direitos reservados:<br>Fernando Luis Godoy        </div>
-    </div>
+            &copy; 2026 Direitos reservados:<br>Fernando Luis Godoy
+        </div>
+    </aside>
 
-    <div class="content">
+    <main class="content" id="content">
 
         <!-- ===================== ADMISSÃO ===================== -->
         <div id="admissao" class="section active">
-            <h2 class="section-title">Admissão & Exames Físicos</h2>
+            <h2 class="section-title">Admissão &amp; Exames Físicos</h2>
 
             <div class="item">
                 <h3>Admissão Sala Vermelha</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre>### Sala Vermelha ### 
-Nome paciente: 
-Data de nascimento: 
-Data de admissão em UPA: 
+                <pre>### Sala Vermelha ###
+Nome paciente:
+Data de nascimento:
+Data de admissão em UPA:
 
 # Alergia: nega.
 # Comorbidades: nega.
 # Medicações de uso contínuo: nega.
-# HDA: Paciente vem via fluxo/trazida pelo SAMU para atendimento nesta unidade devido quadro de 
+# HDA: Paciente vem via fluxo/trazida pelo SAMU para atendimento nesta unidade devido quadro de
 
 # Objetivo:
-- Sinais Vitais: PA 120/85 mmHg | FC: 72 bpm | FR: 20 irpm | SatO2: 98% em ar ambiente 
-- Ectoscopia: BEG, normocorad, hidratad, anictéric, acianótic, afebril, pele íntegra.
+- Sinais vitais: PA 120/85 mmHg | FC: 72 bpm | FR: 20 irpm | SatO2: 98% em ar ambiente
+- Ectoscopia: BEG, normocorado, hidratado, anictérico, acianótico, afebril, pele íntegra.
 - Neurológico: LOTE, Glasgow 15, PIFR, sem déficits neurológicos.
-- Aparelho Cardiológico: RCR, 2T, BNF, SS.
-- Aparelho Respiratório: Eupnéia em ar ambiente, sem esforço respiratório (Saturação de oxigênio 99%), expansibilidade pulmonar preservada, MVUA, sem ruídos adventícios.
-- Abdome: Inocente, normotenso, RHA+, indolor à palpação superficial e profunda, sem sinais de peritonismo e/ou visceromegalias. Sinais de Piparote, Blumberg, Murphy e Giordano negativos.
-- Extremidades: Aquecidas, perfusão periférica normal TEC < 2 segundos, pulsos amplos e simétricos, sem edemas.
+- Aparelho cardiológico: RCR, 2T, BNF, SS.
+- Aparelho respiratório: eupnéico em ar ambiente, sem esforço respiratório (saturação de oxigênio 99%), expansibilidade pulmonar preservada, MVUA, sem ruídos adventícios.
+- Abdome: inocente, normotenso, RHA+, indolor à palpação superficial e profunda, sem sinais de peritonismo e/ou visceromegalias. Sinais de Piparote, Blumberg, Murphy e Giordano negativos.
+- Extremidades: aquecidas, perfusão periférica normal TEC < 2 segundos, pulsos amplos e simétricos, sem edemas.
 
-# Resultados de Exames:
+# Resultados de exames:
 - ECG:
-- Laboratoriais: Hemograma (Hb, Ht, Leuc, Plaq) | Na | K | Uréia | Creatinina | TGO | TGP | Bilirrubinas (BT, BI, BD) | TP % RNI | TAP seg | Proteina C Reativa | CK | CKMB | Troponina | Gasometria Arterial (pH, pO2, pCO2, HCO3, BE, Sat.O2) | EQU.
-- Raio-X de Tórax:
+- Laboratoriais: hemograma (Hb, Ht, Leuc, Plaq) | Na | K | Ureia | Creatinina | TGO | TGP | Bilirrubinas (BT, BI, BD) | TP % RNI | TAP seg | Proteína C reativa | CK | CKMB | Troponina | Gasometria arterial (pH, pO2, pCO2, HCO3, BE, Sat.O2) | EQU.
+- Raio-X de tórax:
 
 # Conduta:
 - Suporte clínico
 - Monitorização contínua
 - Sinais vitais e cuidados gerais
 - Oxigenioterapia conforme necessário
-- Prescrevo sintomáticos 
+- Prescrevo sintomáticos
 - Solicito exames laboratoriais e urina para avaliação metabólica
 - Demais conforme prescrição médica</pre>
             </div>
@@ -116,444 +346,444 @@ Data de admissão em UPA:
             <div class="item">
                 <h3>Exame Físico Adulto Homem</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre>EXAME FÍSICO ADULTO HOMEM
-ANTECEDENTES PESSOAIS: NEGA ALERGIA MEDICAMENTOSA. NEGA CARDIOPATIA. NEGA NEFROPATIA. NEGA COMORBIDADES. NEGA MEDICAMENTOS DE USO CONTÍNUO.
+                <pre>Exame físico adulto homem
+Antecedentes pessoais: nega alergia medicamentosa. Nega cardiopatia. Nega nefropatia. Nega comorbidades. Nega medicamentos de uso contínuo.
 
-ECTOSCOPIA: BOM ESTADO GERAL. LÚCIDO E ORIENTADO EM TEMPO E ESPAÇO COM FALA E LINGUAGEM PRESERVADOS. FÁSCIES ATÍPICA. CORADO, HIDRATADO, ANICTÉRICO, ACIANÓTICO. AFEBRIL. PERFUSÃO MENOR QUE 2 SEGUNDOS. SINAL DE CACIFO NEGATIVO. MARCHA ATÍPICA. PELE ÍNTEGRA COM PILIFICAÇÃO ADEQUADA PARA SEXO E IDADE. 
+Ectoscopia: bom estado geral. Lúcido e orientado em tempo e espaço com fala e linguagem preservados. Fácies atípica. Corado, hidratado, anictérico, acianótico. Afebril. Perfusão menor que 2 segundos. Sinal de cacifo negativo. Marcha atípica. Pele íntegra com pilificação adequada para sexo e idade.
 
-OROSCOPIA: OROFARINGE SEM HIPEREMIA. AUSÊNCIA DE FOCOS PURULENTOS. AUSÊNCIA DE SINAL DA VELA.
-OTOSCOPIA: CANAL AUDITIVO SEM HIPEREMIA. MEMBRANA TIMPÂNICA TRANSPARENTE. AUSÊNCIA DE OTORREIA E OTORRAGIA. SEM SINAIS DE MASTOIDITE.
+Oroscopia: orofaringe sem hiperemia. Ausência de focos purulentos. Ausência de sinal da vela.
+Otoscopia: canal auditivo sem hiperemia. Membrana timpânica transparente. Ausência de otorreia e otorragia. Sem sinais de mastoidite.
 
-CARDÍACO: AUSÊNCIA DE CIRCULAÇÃO COLATERAL. AUSÊNCIA DE EDEMA, CIANOSE, ESTASE JUGULAR, ORTOPNEIA OU ASCITE. AUSÊNCIA DE FRÊMITOS PALPÁVEIS. 2 BULHAS RÍTMICAS E NORMOFONÉTICAS SEM SOPROS.
+Cardíaco: ausência de circulação colateral. Ausência de edema, cianose, estase jugular, ortopneia ou ascite. Ausência de frêmitos palpáveis. 2 bulhas rítmicas e normofonéticas sem sopros.
 
-TORÁCICO: TÓRAX NORMAL. AUSÊNCIA DE GÂNGLIOS PALPÁVEIS. EXPANSIBILIDADE PASSIVA E ATIVA PRESERVADAS. NÃO FAZ USO DE MUSCULATURA ACESSÓRIA. MURMÚRIOS VESICULARES FISIOLOGICAMENTE DISTRIBUÍDOS SEM RUÍDOS ADVENTÍCIOS.
+Torácico: tórax normal. Ausência de gânglios palpáveis. Expansibilidade passiva e ativa preservadas. Não faz uso de musculatura acessória. Murmúrios vesiculares fisiologicamente distribuídos sem ruídos adventícios.
 
-ABDOMINAL: ABDOME PLANO. RUÍDOS HIDROAÉREOS PRESENTES E NORMOATIVOS. SOM TIMPÂNICO EXCETO EM HIPOCÔNDRIO DIREITO. ESPAÇO DE TRAUBE LIVRE. SEM SINAIS DE HÉRNIAS, RIGIDEZ ABDOMINAL OU SENSIBILIDADE DOLOROSA. SINAL DE MURPHY NEGATIVO. BLUMBERG NEGATIVO. GIORDANO NEGATIVO.
+Abdominal: abdome plano. Ruídos hidroaéreos presentes e normoativos. Som timpânico exceto em hipocôndrio direito. Espaço de Traube livre. Sem sinais de hérnias, rigidez abdominal ou sensibilidade dolorosa. Sinal de Murphy negativo. Blumberg negativo. Giordano negativo.
 
-VASCULAR: SINAL DE HOMANS NEGATIVO. SINAL DE OLOW NEGATIVO. SINAL DE BANCROFT NEGATIVO. SINAL DE BANDEIRA NEGATIVO. SINAL DE MOSES NEGATIVO.
+Vascular: sinal de Homans negativo. Sinal de Olow negativo. Sinal de Bancroft negativo. Sinal de Bandeira negativo. Sinal de Moses negativo.
 
-NEUROLÓGICO: GLASGOW 15. PUPILAS ISOCORICAS ISOFOTORREAGENTES. AUSENCIA DE NISTAGMO, ESTRABISMO OU OUTRAS ALTERAÇÕES OCULARES. MOTRICIDADE VOLUNTÁRIA PRESERVADA. FORÇA MUSCULAR GRAU 5. EQUILÍBRIO ESTÁTICO E DINÂMICO PRESERVADOS AVALIADOS ATRAVÉS DA MANOBRA DE ROMBERG. COORDENAÇÃO MOTORA PRESERVADA. REFLEXOS PRESERVADOS (BICIPITAL, TRICIPITAL, ESTILORRADIAL, PATELAR E AQUILEU). SENSIBILIDADE PRESERVADA.</pre>
+Neurológico: Glasgow 15. Pupilas isocóricas isofotorreagentes. Ausência de nistagmo, estrabismo ou outras alterações oculares. Motricidade voluntária preservada. Força muscular grau 5. Equilíbrio estático e dinâmico preservados avaliados através da manobra de Romberg. Coordenação motora preservada. Reflexos preservados (bicipital, tricipital, estilorradial, patelar e aquileu). Sensibilidade preservada.</pre>
             </div>
 
             <div class="item">
                 <h3>Exame Físico Adulto Mulher</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre>EXAME FÍSICO ADULTO MULHER
-ANTECEDENTES PESSOAIS: NEGA ALERGIA MEDICAMENTOSA. NEGA CARDIOPATIA. NEGA NEFROPATIA. NEGA COMORBIDADES. NEGA MEDICAMENTOS DE USO CONTÍNUO.
+                <pre>Exame físico adulto mulher
+Antecedentes pessoais: nega alergia medicamentosa. Nega cardiopatia. Nega nefropatia. Nega comorbidades. Nega medicamentos de uso contínuo.
 
-ECTOSCOPIA: BOM ESTADO GERAL. LÚCIDA E ORIENTADA EM TEMPO E ESPAÇO COM FALA E LINGUAGEM PRESERVADOS. FÁSCIES ATÍPICA. CORADA, HIDRATADA, ANICTÉRICA, ACIANÓTICA. AFEBRIL. PERFUSÃO MENOR QUE 2 SEGUNDOS. SINAL DE CACIFO NEGATIVO. MARCHA ATÍPICA. PELE ÍNTEGRA COM PILIFICAÇÃO ADEQUADA PARA SEXO E IDADE. PELE COM TEXTURA, ELASTICIDADE, MOBILIDADE E TURGOR PRESERVADOS.
+Ectoscopia: bom estado geral. Lúcida e orientada em tempo e espaço com fala e linguagem preservados. Fácies atípica. Corada, hidratada, anictérica, acianótica. Afebril. Perfusão menor que 2 segundos. Sinal de cacifo negativo. Marcha atípica. Pele íntegra com pilificação adequada para sexo e idade. Pele com textura, elasticidade, mobilidade e turgor preservados.
 
-OROSCOPIA: OROFARINGE SEM HIPEREMIA. AUSÊNCIA DE FOCOS PURULENTOS. AUSÊNCIA DE SINAL DA VELA
-OTOSCOPIA: CANAL AUDITIVO SEM HIPEREMIA. MEMBRANA TIMPÂNICA TRANSPARENTE. AUSÊNCIA DE OTORREIA. AUSÊNCIA DE OTORRAGIA. AUSÊNCIA DE EDEMA AURICULAR. SEM SINAIS DE MASTOIDITE.
+Oroscopia: orofaringe sem hiperemia. Ausência de focos purulentos. Ausência de sinal da vela.
+Otoscopia: canal auditivo sem hiperemia. Membrana timpânica transparente. Ausência de otorreia. Ausência de otorragia. Ausência de edema auricular. Sem sinais de mastoidite.
 
-CARDÍACO: AUSÊNCIA DE CIRCULAÇÃO COLATERAL. AUSÊNCIA DE EDEMA, CIANOSE, ESTASE JUGULAR, ORTOPNEIA OU ASCITE. AUSÊNCIA DE FRÊMITOS PALPÁVEIS. 2 BULHAS RÍTMICAS E NORMOFONÉTICAS SEM SOPROS.
+Cardíaco: ausência de circulação colateral. Ausência de edema, cianose, estase jugular, ortopneia ou ascite. Ausência de frêmitos palpáveis. 2 bulhas rítmicas e normofonéticas sem sopros.
 
-TORÁCICO: TÓRAX NORMAL. AUSÊNCIA DE GÂNGLIOS PALPÁVEIS. EXPANSIBILIDADE PASSIVA E ATIVA PRESERVADAS. NÃO FAZ USO DE MUSCULATURA ACESSÓRIA. MURMÚRIOS VESICULARES FISIOLOGICAMENTE DISTRIBUÍDOS SEM RUÍDOS ADVENTÍCIOS.
+Torácico: tórax normal. Ausência de gânglios palpáveis. Expansibilidade passiva e ativa preservadas. Não faz uso de musculatura acessória. Murmúrios vesiculares fisiologicamente distribuídos sem ruídos adventícios.
 
-ABDOMINAL: ABDOME PLANO. RUÍDOS HIDROAÉREOS PRESENTES NORMOATIVOS. SOM TIMPÂNICO EXCETO EM HIPOCÔNDRIO DIREITO. ESPAÇO DE TRAUBE LIVRE. SEM SINAIS DE HÉRNIAS, RIGIDEZ ABDOMINAL OU SENSIBILIDADE DOLOROSA. SINAL DE MURPHY NEGATIVO. BLUMBERG NEGATIVO. GIORDANO NEGATIVO.
+Abdominal: abdome plano. Ruídos hidroaéreos presentes normoativos. Som timpânico exceto em hipocôndrio direito. Espaço de Traube livre. Sem sinais de hérnias, rigidez abdominal ou sensibilidade dolorosa. Sinal de Murphy negativo. Blumberg negativo. Giordano negativo.
 
-VASCULAR: SINAL DE HOMANS NEGATIVO. SINAL DE OLOW NEGATIVO. SINAL DE BANCROFT NEGATIVO. SINAL DE BANDEIRA NEGATIVO. SINAL DE MOSES NEGATIVO.
+Vascular: sinal de Homans negativo. Sinal de Olow negativo. Sinal de Bancroft negativo. Sinal de Bandeira negativo. Sinal de Moses negativo.
 
-NEUROLÓGICO: GLASGOW 15. PUPILAS ISOCORICAS ISOFOTORREAGENTES. AUSENCIA DE NISTAGMO, ESTRABISMO OU OUTRAS ALTERAÇÕES OCULARES. MOTRICIDADE VOLUNTÁRIA DE MEMBROS PRESERVADA. FORÇA MUSCULAR GRAU 5 EM MEMBROS. EQUILÍBRIO ESTÁTICO E DINÂMICO PRESERVADOS AVALIADOS ATRAVÉS DA MANOBRA DE ROMBERG. COORDENAÇÃO MOTORA PRESERVADA. REFLEXOS PRESERVADOS (BICIPITAL, TRICIPITAL, ESTILORRADIAL, PATELAR E AQUILEU). SENSIBILIDADE PRESERVADA.</pre>
+Neurológico: Glasgow 15. Pupilas isocóricas isofotorreagentes. Ausência de nistagmo, estrabismo ou outras alterações oculares. Motricidade voluntária de membros preservada. Força muscular grau 5 em membros. Equilíbrio estático e dinâmico preservados avaliados através da manobra de Romberg. Coordenação motora preservada. Reflexos preservados (bicipital, tricipital, estilorradial, patelar e aquileu). Sensibilidade preservada.</pre>
             </div>
 
             <div class="item">
                 <h3>Corpo de Delito</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># CORPO DE DELITO:
-PACIENTE ADMITIDO PARA EXAME DE CORPO DE DELITO VIA MÉDICO PLANTONISTA DA UNIDADE DE PRONTO-ATENDIMENTO. NEGA QUEIXAS ÁLGICAS, LESÕES CORPORAIS OU QUAISQUER OUTROS SINTOMAS. 
+                <pre># Corpo de delito:
+Paciente admitido para exame de corpo de delito via médico plantonista da unidade de pronto-atendimento. Nega queixas álgicas, lesões corporais ou quaisquer outros sintomas.
 
-AO EXAME FÍSICO:
-- ECTOSCOPIA: BOM ESTADO GERAL. FÁSCIES ATÍPICA. NORMOCORADO, HIDRATADO, ANICTÉRICO, ACIANÓTICO, AFEBRIL. AUSÊNCIA DE GÂNGLIOS PALPÁVEIS. PELE ÍNTEGRA COM PILIFICAÇÃO ADEQUADA PARA SEXO E IDADE.
-- OROSCOPIA: OROFARINGE SEM HIPEREMIA. AUSÊNCIA DE FOCOS PURULENTOS.
-- OTOSCOPIA: CANAL AUDITIVO SEM HIPEREMIA. MEMBRANA TIMPÂNICA TRANSPARENTE. AUSÊNCIA DE OTORREIA, OTORRAGIA OU EDEMA AURICULAR.
-- NEUROLÓGICO: LÚCIDO E ORIENTADO EM TEMPO E ESPAÇO COM FALA E LINGUAGEM PRESERVADAS, GLASGOW 15, PUPILAS ISOCÓRICAS E ISOFOTORREAGENTES, AUSÊNCIA DE NISTAGMO, ESTRABISMO OU OUTRAS ALTERAÇÕES OCULARES. MOTRICIDADE VOLUNTÁRIA DE MEMBROS PRESERVADA. FORÇA MUSCULAR GRAU 5 EM MEMBROS. EQUILÍBRIO ESTÁTICO E DINÂMICO PRESERVADOS. COORDENAÇÃO MOTORA, REFLEXOS E SENSIBILIDADE PRESERVADOS. MARCHA ATÍPICA. SEM QUAISQUER DÉFICITS NEUROLÓGICOS.
-- APARELHO CARDÍACO: RITMO CARDÍACO REGULAR, 2 BULHAS RÍTMICAS E NORMOFONÉTICAS SEM SOPROS. AUSÊNCIA DE CIRCULAÇÃO COLATERAL. AUSÊNCIA DE EDEMA, CIANOSE, ESTASE JUGULAR, ORTOPNEIA OU ASCITE.
-- APARELHO RESPIRATÓRIO: TÓRAX NORMAL. EUPNEIA EM AR AMBIENTE, SEM ESFORÇO RESPIRATÓRIO. NÃO FAZ USO DE MUSCULATURA ACESSÓRIA, SATURAÇÃO DE OXIGÊNIO 100%, EXPANSIBILIDADE PASSIVA E ATIVA PRESERVADAS, MURMÚRIOS VESICULARES FISIOLOGICAMENTE DISTRIBUÍDOS, SEM RUÍDOS ADVENTÍCIOS.
-- ABDOMINAL: ABDOME PLANO. RUÍDOS HIDROAÉREOS PRESENTES E NORMOATIVOS. SOM TIMPÂNICO EXCETO EM HIPOCÔNDRIO DIREITO. ESPAÇO DE TRAUBE LIVRE. SEM SINAIS DE HÉRNIAS, RIGIDEZ ABDOMINAL OU SENSIBILIDADE DOLOROSA. SEM SINAIS DE PERITONISMO E/OU VISCEROMEGALIAS. SINAL DE MURPHY NEGATIVO. BLUMBERG NEGATIVO. PIPAROTE NEGATIVO. GIORDANO NEGATIVO.
-- EXTREMIDADES: AQUECIDAS, PERFUSÃO PERIFÉRICA NORMAL (MENOR QUE 2 SEGUNDOS), PULSOS AMPLOS E SIMÉTRICOS, SEM EDEMAS. SINAL DE CACIFO NEGATIVO.
+Ao exame físico:
+- Ectoscopia: bom estado geral. Fácies atípica. Normocorado, hidratado, anictérico, acianótico, afebril. Ausência de gânglios palpáveis. Pele íntegra com pilificação adequada para sexo e idade.
+- Oroscopia: orofaringe sem hiperemia. Ausência de focos purulentos.
+- Otoscopia: canal auditivo sem hiperemia. Membrana timpânica transparente. Ausência de otorreia, otorragia ou edema auricular.
+- Neurológico: lúcido e orientado em tempo e espaço com fala e linguagem preservadas, Glasgow 15, pupilas isocóricas e isofotorreagentes, ausência de nistagmo, estrabismo ou outras alterações oculares. Motricidade voluntária de membros preservada. Força muscular grau 5 em membros. Equilíbrio estático e dinâmico preservados. Coordenação motora, reflexos e sensibilidade preservados. Marcha atípica. Sem quaisquer déficits neurológicos.
+- Aparelho cardíaco: ritmo cardíaco regular, 2 bulhas rítmicas e normofonéticas sem sopros. Ausência de circulação colateral. Ausência de edema, cianose, estase jugular, ortopneia ou ascite.
+- Aparelho respiratório: tórax normal. Eupnéico em ar ambiente, sem esforço respiratório. Não faz uso de musculatura acessória, saturação de oxigênio 100%, expansibilidade passiva e ativa preservadas, murmúrios vesiculares fisiologicamente distribuídos, sem ruídos adventícios.
+- Abdominal: abdome plano. Ruídos hidroaéreos presentes e normoativos. Som timpânico exceto em hipocôndrio direito. Espaço de Traube livre. Sem sinais de hérnias, rigidez abdominal ou sensibilidade dolorosa. Sem sinais de peritonismo e/ou visceromegalias. Sinal de Murphy negativo. Blumberg negativo. Piparote negativo. Giordano negativo.
+- Extremidades: aquecidas, perfusão periférica normal (menor que 2 segundos), pulsos amplos e simétricos, sem edemas. Sinal de cacifo negativo.
 
-CONSTATADA A ESTABILIDADE HEMODINÂMICA E AUSÊNCIA DE LESÕES CORPORAIS. SEM NECESSIDADE OU INDICAÇÃO DE PERMANÊNCIA EM UNIDADE. PACIENTE APTO PARA RECLUSÃO OU QUAISQUER OUTRAS CONDUTAS ADOTADAS POR EQUIPE POLICIAL. FICO A DISPOSIÇÃO. SEM MAIS.</pre>
+Constatada a estabilidade hemodinâmica e ausência de lesões corporais. Sem necessidade ou indicação de permanência em unidade. Paciente apto para reclusão ou quaisquer outras condutas adotadas por equipe policial. Fico à disposição. Sem mais.</pre>
             </div>
         </div>
 
         <!-- ===================== TRAUMA ===================== -->
         <div id="trauma" class="section">
-            <h2 class="section-title">Trauma & Reanimação</h2>
+            <h2 class="section-title">Trauma &amp; Reanimação</h2>
 
             <div class="item">
                 <h3>ABCDE do Trauma</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre>ABCDE DO TRAUMA
-PACIENTE VÍTIMA DE ACIDENTE AUTOMOBILÍSTICO ENTRE CARRO X MOTO COMPARECE EM UNIDADE DE PRONTO ATENDIMENTO TRAZIDO PELOS BOMBEIROS EM PRANCHA RÍGIDA E COLA CERVICAL.
+                <pre>ABCDE do trauma
+Paciente vítima de acidente automobilístico entre carro x moto comparece em unidade de pronto atendimento trazido pelos bombeiros em prancha rígida e colar cervical.
 
-A: VIAS AÉREAS PÉRVIAS, FONAÇÃO PRESERVADA. POSICIONADO EM PRANCHA RÍGIDA + COLA CERVICAL SEM QUEIXAS ÁLGICAS. RETIRADOS SEM INTERCORRÊNCIAS. 
-B: MVFD SEM RUÍDOS ADVENTÍCIOS, TÓRAX SIMÉTRICO, EXPANSIBILIDADE PRESERVADA, SEM SINAIS DE DESCONFORTO RESPIRATÓRIO, EUPNEICO EM AR AMBIENTE. 
-C: BRNF S/ SOPROS, JUGULARES NORMODISTENDIDAS, PULSOS CHEIOS E SIMÉTRICOS. ABDOME FLÁCIDO, INDOLOR A PALPAÇÃO, SEM SINAIS DE IRRITAÇÃO PERITONEAL. PELVE ESTÁVEL. 
-D: PUPILAS ISOFOTORREAGENTES. GLASGOW 15. CONSCIENTE E ORIENTADO, SEM DÉFICITS MOTORES. 
-E: SEM DOR A PALPAÇÃO DE COLUNA CERVICAL, TORÁCICA, LOMBAR E SEM EVIDÊNCIAS DE FRATURA. SEM FCC.
+A: vias aéreas pérvias, fonação preservada. Posicionado em prancha rígida + colar cervical sem queixas álgicas. Retirados sem intercorrências.
+B: MVFD sem ruídos adventícios, tórax simétrico, expansibilidade preservada, sem sinais de desconforto respiratório, eupneico em ar ambiente.
+C: BRNF s/ sopros, jugulares normodistendidas, pulsos cheios e simétricos. Abdome flácido, indolor à palpação, sem sinais de irritação peritoneal. Pelve estável.
+D: pupilas isofotorreagentes. Glasgow 15. Consciente e orientado, sem déficits motores.
+E: sem dor à palpação de coluna cervical, torácica, lombar e sem evidências de fratura. Sem FCC.
 
-ÍNDICE DE CHOQUE: FC/PAS. SE MAIOR OU IGUAL A 0,9 CONSIDERAR TRANSFUSÃO SANGUÍNEA.</pre>
+Índice de choque: FC/PAS. Se maior ou igual a 0,9 considerar transfusão sanguínea.</pre>
             </div>
 
             <div class="item">
                 <h3>Trauma Torácico</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre>PNEUMOTÓRAX ABERTO: ORIFÍCIO COM TÓRAX ACOMETIDO SEM MOVIMENTO. CURATIVO DE 3 PONTOS. DEPOIS DRENAR.
-PNEUMOTÓRAX HIPERTENSIVO: TÓRAX EXPANDIDO NO HEMITÓRAX ACOMETIDO. HIPERTIMPANICO. PUNCIONAR COM ABOCATH 14 NO QUINTO ESPAÇO INTERCOSTAL LINHA AXILAR MÉDIA. TIRAR AGULHA E DEIXAR ABOCATH.
-HEMOTÓRAX: RESCUCITAÇÃO VOLEMICA, HEMODERIVADO COM CONCENTRADO DE HEMACIA O – E DEPOIS DRENAR O TÓRAX.
-CONTUSÃO PULMONAR: 
-TÓRAX INSTÁVEL: FX EM 3 OU MAIS ARCOS COSTAIS EM DOIS OU MAIS LOCAIS. ANALGESIA INTENSA. INTUBAR.</pre>
+                <pre>Pneumotórax aberto: orifício com tórax acometido sem movimento. Curativo de 3 pontos. Depois drenar.
+Pneumotórax hipertensivo: tórax expandido no hemitórax acometido. Hipertimpânico. Puncionar com Abocath 14 no quinto espaço intercostal linha axilar média. Tirar agulha e deixar Abocath.
+Hemotórax: ressuscitação volêmica, hemoderivado com concentrado de hemácia O – e depois drenar o tórax.
+Contusão pulmonar:
+Tórax instável: FX em 3 ou mais arcos costais em dois ou mais locais. Analgesia intensa. Intubar.</pre>
             </div>
 
             <div class="item">
                 <h3>Hemoderivados e Transfusão</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre>CONCENTRADO DE HEMÁCIAS (250 A 300ML/UN): CADA UNIDADE ELEVA O HB EM 1 A 1,5 E O HT EM 3%
-PLASMA FRESCO CONGELADO (180 A 200ML/UNIDADE): SEMPRE QUE O RNI > 1,5
-CONCENTRADO DE PLAQUETAS (50ML/UNIDADE): EM PLAQUETAS < 50.000 OU 100.000 COM SANGRAMENTO ATIVO. CADA UNIDADE AUMENTA DE 5.000 A 10.000 PLAQUETAS. POOL: +/- 250ML. AFERESE: +/- 350ML
-CRIOPRECIPITADO (10 A 20 ML CADA UNIDADE RANDÔMICA): GERALMENTE USA-SE DE 7 A 10 UNIDADES RANDÔMICAS. USADO SE FIBRINOGÊNIO ESTIVER MENOR DE 200 MG/DL. CADA UNIDADE AUMENTA O FIBRINOGENIO EM 10 MG/DL
+                <pre>Concentrado de hemácias (250 a 300 mL/un): cada unidade eleva o Hb em 1 a 1,5 e o Ht em 3%
+Plasma fresco congelado (180 a 200 mL/unidade): sempre que o RNI > 1,5
+Concentrado de plaquetas (50 mL/unidade): em plaquetas < 50.000 ou 100.000 com sangramento ativo. Cada unidade aumenta de 5.000 a 10.000 plaquetas. Pool: +/- 250 mL. Aférese: +/- 350 mL
+Crioprecipitado (10 a 20 mL cada unidade randômica): geralmente usa-se de 7 a 10 unidades randômicas. Usado se fibrinogênio estiver menor de 200 mg/dL. Cada unidade aumenta o fibrinogênio em 10 mg/dL
 
-CRITÉRIOS DE TRANSFUSÃO:
-HB > 8 | HT > 21% | PLAQUETAS > 50.000 | PROTROMBINA < 1,5 | FIBRINOGÊNIO > 200</pre>
+Critérios de transfusão:
+Hb > 8 | Ht > 21% | Plaquetas > 50.000 | Protrombina < 1,5 | Fibrinogênio > 200</pre>
             </div>
         </div>
 
         <!-- ===================== CARDIOLOGIA ===================== -->
         <div id="cardiologia" class="section">
-            <h2 class="section-title">Cardiologia & Vascular</h2>
+            <h2 class="section-title">Cardiologia &amp; Vascular</h2>
 
             <div class="item">
                 <h3>Protocolo Dor Torácica Inicial</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># PROTOCOLO DOR TORÁCICA
-AAS 100 MG – 3 COMPRIMIDOS MASTIGAR E ENGOLIR AGORA. 
-CLOPIDOGREL 50 MG – 4 COMPRIMIDOS TOMAR AGORA.
-SINVASTATINA 20 MG – 2 COMPRIMIDOS TOMAR AGORA.
-ATENOLOL 50 MG – 1 COMPRIMIDO TOMAR AGORA. (CONTRA-INDICAÇÃO: FR < 60 BPM ; PAS < 100 MMHG ; DISFUNÇÃO DE VE GRAVE ; HIPOPERFUSÃO PERIFÉRICA ; INTERVALO PR > 0,24 SEGUNDOS ; BAV DE 2º OU 3º GRAU ; DPOC OU ASMA GRAVE).
-ENALAPRIL 10 MG – 1 COMPRIMIDO TOMAR AGORA. (CONTRA-INDICAÇÃO: PAS < 100 MMHG ; HIPOPERFUSÃO PERIFÉRICA ; SINAIS DE CHOQUE CARDIOGÊNICO).
-MORFINA 10 MG/ML – 1 AMPOLA APLICAR EV 1 AMPOLA SE PERSISTIR DOR.
+                <pre># Protocolo dor torácica
+AAS 100 mg – 3 comprimidos mastigar e engolir agora.
+Clopidogrel 50 mg – 4 comprimidos tomar agora.
+Sinvastatina 20 mg – 2 comprimidos tomar agora.
+Atenolol 50 mg – 1 comprimido tomar agora. (Contraindicação: FR < 60 bpm; PAS < 100 mmHg; disfunção de VE grave; hipoperfusão periférica; intervalo PR > 0,24 segundos; BAV de 2º ou 3º grau; DPOC ou asma grave).
+Enalapril 10 mg – 1 comprimido tomar agora. (Contraindicação: PAS < 100 mmHg; hipoperfusão periférica; sinais de choque cardiogênico).
+Morfina 10 mg/mL – 1 ampola aplicar EV 1 ampola se persistir dor.
 
-- MONITORIZAÇÃO CARDÍACA CONTÍNUA
-- ECG – AGORA POR FAVOR (IAM COM OU SEM SUPRA ST – EM 10/10 MINUTOS)
-- SOLICITO ENZIMAS CARDÍACAS (CPK, CKMB, TROPONINA)
-- REALIZAR ACESSO VENOSO – PREFERENCIALMENTE EM MEMBRO SUPERIOR ESQUERDO (MSE), CALIBRE N°20, SE POSSÍVEL
-- ADMINISTRAR MEDICAÇÕES CONFORME PRESCRIÇÃO MÉDICA
-- MANTER EM OBSERVAÇÃO CONTÍNUA</pre>
+- Monitorização cardíaca contínua
+- ECG – agora por favor (IAM com ou sem supra ST – em 10/10 minutos)
+- Solicito enzimas cardíacas (CPK, CKMB, troponina)
+- Realizar acesso venoso – preferencialmente em membro superior esquerdo (MSE), calibre n°20, se possível
+- Administrar medicações conforme prescrição médica
+- Manter em observação contínua</pre>
             </div>
 
             <div class="item">
                 <h3>IAM Com Supra ST (Conduta + Trombólise)</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre>IAM COM SUPRA:
-1. DIETA ZERO E RESTRIÇÃO EM LEITO
-2. MONITORIZAÇÃO MULTIPARAMÉTRICA
-3. AAS 100MG 24/24H (INICIAR 24H APÓS ATAQUE)
-4. CLOPIDOGREL 75MG V.O 24/24H
-5. CAPTOPRIL 25MG V.O 24/24H CEDO
-6. SINVASTATINA 40MG V.O A NOITE
+                <pre>IAM com supra:
+1. Dieta zero e restrição em leito
+2. Monitorização multiparamétrica
+3. AAS 100 mg 24/24h (iniciar 24h após ataque)
+4. Clopidogrel 75 mg VO 24/24h
+5. Captopril 25 mg VO 24/24h cedo
+6. Sinvastatina 40 mg VO à noite
 
-##### TROMBÓLISE - SEGUIR ESTRITAMENTE #####
--- 1º BOLUS INICIAL - 30MG ENOXAPARINA EV EM BOLUS + 15MG ALTEPLASE EV EM BOLUS
--- 2º ENOXAPARINA 70MG SC
--- 3º ALTEPLASE 50MG EV EM 30 MIN (BIC)
--- 4º ALTEPLASE 35MG EV EM 60 MIN (BIC)
+##### Trombólise - seguir estritamente #####
+-- 1º bolus inicial - 30 mg enoxaparina EV em bolus + 15 mg alteplase EV em bolus
+-- 2º enoxaparina 70 mg SC
+-- 3º alteplase 50 mg EV em 30 min (BIC)
+-- 4º alteplase 35 mg EV em 60 min (BIC)
 
-7. ENOXAPARINA 70MG SC 12/12H (REALIZAR 1ª DOSE DURANTE TROMBÓLISE - 2º ITEM)
-8. ECG - REALIZAR AO TÉRMINO DE TROMBÓLISE OU SE INTERCORRÊNCIA
-9. CORREÇÃO DE HGT CONFORME PROTOCOLO NÃO NEFROPATA - SUSPENDER HIPOGLICEMIANTES ORAIS
-10. CURVA TROPONINA - COLETA EM 0 - 6 - 12H
-11. NAUSEDRON 1AMP EV 8/8H SE NÁUSEA OU VÔMITO
-12. DIPIRONA 1 AMP EV 6/6H SE FEBRE
-13. MORFINA 1AMP + 9ML AD - REALIZAR 2ML EV EM BOLUS >=ACM <<
-14. SSVV + CCGG + HGT 3/3H
-15. O2 SUPLEMENTAR SE SAT < 90% (UTILIZAR MNR SE > 4L)
-16. NOTIFICAR PLANTONISTA SE INTERCORRÊNCIAS</pre>
+7. Enoxaparina 70 mg SC 12/12h (realizar 1ª dose durante trombólise - 2º item)
+8. ECG - realizar ao término de trombólise ou se intercorrência
+9. Correção de HGT conforme protocolo não nefropata - suspender hipoglicemiantes orais
+10. Curva troponina - coleta em 0 - 6 - 12h
+11. Nausedron 1 amp EV 8/8h se náusea ou vômito
+12. Dipirona 1 amp EV 6/6h se febre
+13. Morfina 1 amp + 9 mL AD - realizar 2 mL EV em bolus ≥ ACM <<
+14. SSVV + CCGG + HGT 3/3h
+15. O2 suplementar se Sat < 90% (utilizar MNR se > 4 L)
+16. Notificar plantonista se intercorrências</pre>
             </div>
 
             <div class="item">
                 <h3>IAM Sem Supra ST (IAMSST / Angina Instável)</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre>NÃO REALIZA FIBRINOLÍTICO NESSES CASOS! PODE SURGIR IAM COM SUPRA. NÃO LIBERAR APÓS ESTABILIZAR.
+                <pre>Não realiza fibrinolítico nesses casos! Pode surgir IAM com supra. Não liberar após estabilizar.
 
-1º: TIRAR A DOR DO PACIENTE! NITRATO (ISORDIL 5MG SUBLINGUAL PODE REPETIR ATÉ 3 VEZES COM INTERVALO DE 10 MINUTOS ENTRE ELAS). SE NÃO MELHORAR, PROPANOLOL 20 MG OU ATENOLOL 25 MG. ESPERA MAIS 20 MIN. MORFINA 2MG EV SE NÃO MELHORAR.
-- TRIDIL 5 A 10 ML/H. NÃO FAZER NITRATO EM HIPOTENSOS
+1º: tirar a dor do paciente! Nitrato (Isordil 5 mg sublingual pode repetir até 3 vezes com intervalo de 10 minutos entre elas). Se não melhorar, propranolol 20 mg ou atenolol 25 mg. Espera mais 20 min. Morfina 2 mg EV se não melhorar.
+- Tridil 5 a 10 mL/h. Não fazer nitrato em hipotensos
 
-2º: AAS 100MG 3 CPS MASTIGADOS + CLOPIDOGREL 75MG 4 CPS VO (SE FOR TRANSFERIDO EM MAIS DE 24H APENAS. SE TIVER MAIS DE 75 ANOS, APENAS 1CP) + ENOXAPARINA 1MG/KG SUBCUTANEO DE 12/12H (SE FOR TRANSFERIDO EM ATÉ 2H, NÃO PRECISA FAZER).
+2º: AAS 100 mg 3 cps mastigados + clopidogrel 75 mg 4 cps VO (se for transferido em mais de 24h apenas. Se tiver mais de 75 anos, apenas 1 cp) + enoxaparina 1 mg/kg subcutâneo de 12/12h (se for transferido em até 2h, não precisa fazer).
 
-3º: MANUTENÇÃO: AAS 100MG AO DIA + CLOPIDOGREL 75MG AO DIA + CAPTOPRIL 25MG 12/12H + SINVASTATINA 40MG AO DIA + PROPANOLOL 12/12H + ENOXAPARINA 12/12H.
+3º: manutenção: AAS 100 mg ao dia + clopidogrel 75 mg ao dia + captopril 25 mg 12/12h + sinvastatina 40 mg ao dia + propranolol 12/12h + enoxaparina 12/12h.
 
-SE TROPONINA NORMAL OU NÃO TIVER TROPONINA? PENSAR EM DIAGNOSTICOS DIFERENCIAIS E EXCLUIR. REALIZAR SCORE DE HEART (PREVISÃO DE EVENTO CARDIOLOGICO NAS PRÓXIMAS 6 SEMANAS)
-HISTÓRIA CLÍNICA: TÍPICA (2), EQUIVALENTE ANGINOSO (1), ATÍPICA (0) 
-ECG: INFRA DE ST (2), ALTERAÇÃO DE REPOLARIZAÇÃO (1), NORMAL (0) 
-AGE: MAIOR DE 65 (2), ENTRE 45 E 64 (1), MENOS DE 45 (0) 
-RISCO: MAIS DE 3 (2), 1 A 3 (1), NENHUM (0)
-TROPONINA: TRES VEZES (2), UMA A TRES VEZES (1), NORMAL (0) 
+Se troponina normal ou não tiver troponina? Pensar em diagnósticos diferenciais e excluir. Realizar escore de HEART (previsão de evento cardiológico nas próximas 6 semanas)
+História clínica: típica (2), equivalente anginoso (1), atípica (0)
+ECG: infra de ST (2), alteração de repolarização (1), normal (0)
+Age: maior de 65 (2), entre 45 e 64 (1), menos de 45 (0)
+Risco: mais de 3 (2), 1 a 3 (1), nenhum (0)
+Troponina: três vezes (2), uma a três vezes (1), normal (0)
 
-INVESTIGAR E ENCAMINHAR SE: MAIOR OU IGUAL 4 PONTOS.</pre>
+Investigar e encaminhar se: maior ou igual 4 pontos.</pre>
             </div>
 
             <div class="item">
                 <h3>Edema Agudo de Pulmão (EAP)</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre>EDEMA AGUDO PULMÃO:
-1. JEJUM E ACESSO CALIBROSO SALINIZADO EV
-2. CABECEIRA ELEVADA 80º CONTÍNUO
-3. DEXAMETASONA 1 AMP EV EM BOLUS A CADA 24H
-4. FUROSEMIDA 40 MG EV 6/6H + AGORA 4 AMP EV EM BOLUS
-5. MORFINA 10 MG + AD 8 ML EV ACM OU SE DOR PRECORDIAL
-6. AAS 100 MG VO 1 CP APÓS ALMOÇO
-7. ESPIRONOLACTONA 25MG 1 COMP VO PELA MANHA
-8. SALBUTAMOL 100 MCG INALAR 8 JATOS A CADA 20 MINUTOS POR 3 CICLOS E MANTER 6 PUFFS A CADA 4 HORAS
-9. SVD E MONITORIZAÇÃO CONTÍNUA DE DIURESE
-10. SUPLEMENTAÇÃO DE O2 ACM - MANTER SAT ENTRE 90-95%
+                <pre>Edema agudo pulmão:
+1. Jejum e acesso calibroso salinizado EV
+2. Cabeceira elevada 80º contínuo
+3. Dexametasona 1 amp EV em bolus a cada 24h
+4. Furosemida 40 mg EV 6/6h + agora 4 amp EV em bolus
+5. Morfina 10 mg + AD 8 mL EV ACM ou se dor precordial
+6. AAS 100 mg VO 1 cp após almoço
+7. Espironolactona 25 mg 1 comp VO pela manhã
+8. Salbutamol 100 mcg inalar 8 jatos a cada 20 minutos por 3 ciclos e manter 6 puffs a cada 4 horas
+9. SVD e monitorização contínua de diurese
+10. Suplementação de O2 ACM - manter Sat entre 90-95%
 
-SE O PACIENTE ESTIVER HIPOTENSO: ICC DESCOMPENSADA. PERFIL C. INICIAR DOBUTAMINA (SE SISTOLICA MAIOR DE 90). SE NÃO PUDER, INICIA NORADRENALINA PARA ELEVAR ACIMA DE 90, ASSIM INICIA DOBUTAMINA. VAI DESMAMANDO NORA. TIROU NORA. ENTRO COM VASODILATADOR E DIURETICO. NESSE MEIO TERMO SE USA VNI (SE CONSCIENTE E ORIENTADO).</pre>
+Se o paciente estiver hipotenso: ICC descompensada. Perfil C. Iniciar dobutamina (se sistólica maior de 90). Se não puder, inicia noradrenalina para elevar acima de 90, assim inicia dobutamina. Vai desmamando nora. Tirou nora. Entro com vasodilatador e diurético. Nesse meio termo se usa VNI (se consciente e orientado).</pre>
             </div>
 
             <div class="item">
                 <h3>Insuficiência Cardíaca Congestiva (ICC)</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre>IC DIREITA (SISTÊMICA): EDEMA DE MMII, ESTASE JUGULAR, ESPLENOMEGALIA, ASCITE, CREPITAÇÕES.
-IC ESQUERDA (PULMONAR): DISPNEIA, TOSSE, ORTOPNEIA, EDEMA AGUDO DE PULMÃO. 
+                <pre>IC direita (sistêmica): edema de MMII, estase jugular, esplenomegalia, ascite, crepitações.
+IC esquerda (pulmonar): dispneia, tosse, ortopneia, edema agudo de pulmão.
 
-PERFIL CLÍNICO-HEMODINÂMICO:
-A: QUENTE E SECO (FUROSEMIDA, HIDROCLOROTIAZIDA, DIGOXINA): está compensado. Ambulatorial. 
-B: QUENTE E ÚMIDO (FUROSEMIDA 1MG/KG, REPETIR DE 2 A 3 VEZES + TRIDIL/NIPRIDE + PROFILAXIA TEP E TVP).
-C: FRIO E ÚMIDO (1MG/KG DE FUROSEMIDA EV EM BOLUS + PROFILAXIA TEP/TVP. SE NÃO MELHORAR, ASSOCIAR DOBUTAMINA).
+Perfil clínico-hemodinâmico:
+A: quente e seco (furosemida, hidroclorotiazida, digoxina): está compensado. Ambulatorial.
+B: quente e úmido (furosemida 1 mg/kg, repetir de 2 a 3 vezes + Tridil/Nipride + profilaxia TEP e TVP).
+C: frio e úmido (1 mg/kg de furosemida EV em bolus + profilaxia TEP/TVP. Se não melhorar, associar dobutamina).
 No paciente frio e úmido:
-1) PA sistólica < 70mmHg: nora + dobuta;
-2) PA sistólica 70-90mmHg: dobutamina;
-3) PA sistólica > 90mmHg: vasodilatadores venosos.
-L: FRIO E SECO (AVALIAR E TRATAR ISQUEMIA + PROFILAXIA TEP). VOLUME SF0.9% 250ML ACM SE EXAGEROU NO DIURETICO.</pre>
+1) PA sistólica < 70 mmHg: nora + dobuta;
+2) PA sistólica 70-90 mmHg: dobutamina;
+3) PA sistólica > 90 mmHg: vasodilatadores venosos.
+L: frio e seco (avaliar e tratar isquemia + profilaxia TEP). Volume SF 0,9% 250 mL ACM se exagerou no diurético.</pre>
             </div>
 
             <div class="item">
                 <h3>AVC (Acidente Vascular Encefálico)</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre>SUSPEITAR EM: QUADRO NEUROLOGICO SUBITO (DEFICIT FOCAL –PERDA DE FORÇA-, DESVIO DE RIMA, DISARTRIA, CEFALEIA, REBAIXAMENTO DE NÍVEL DE CONSCIENCIA, VERTIGEM).
-ESCALA DE CINCINNATI: DESVIO DE RIMA, FALA E QUEDA DO BRAÇO.
+                <pre>Suspeitar em: quadro neurológico súbito (déficit focal – perda de força –, desvio de rima, disartria, cefaleia, rebaixamento de nível de consciência, vertigem).
+Escala de Cincinnati: desvio de rima, fala e queda do braço.
 
-DX DIFERENCIAL: HIPOGLICEMIA, PARALISIA DE BELL, AIT, TUMOR CEREBRAL, INTOXICAÇÕES, TROMBOSE VENOSA CEREBRAL.
+Dx diferencial: hipoglicemia, paralisia de Bell, AIT, tumor cerebral, intoxicações, trombose venosa cerebral.
 
-MONITOR, OXIMETRIA, GLICEMIA CAPILAR, ECG. DIETA ZERO + CABECEIRA ELEVADA
-SF0.9% 500ML DE 8/8H PARA MANTER ACESSO SÓ. HEMOGRAMA + SODIO, POTASSIO, UREIA, CREAT, TAP. IOT SE NÃO CONSEGUIR PROTEGER VIA AEREA.
-MANTER GLICEMIA ENTRE 140 E 180. DE 2/2H
-MANTER TEMPERATURA MENOR DE 37 GRAUS
-PRESSAO ABBAIXO DE 220X120MMHG (ISQUEMICO). PRESSAO ENTRE 140-160 SE HEMORRAGICO.
-TC MAIS RAPIDO POSSIVEL. ENQUANTO NÃO TEM ELA, APENAS MANTER PRESSAO.
-- TROMBOLISE EM ATÉ 4,5 HORAS
-- TROMBECTOMIA EM ATÉ 6 HORAS
-- CRANIECTOMIA EM ATÉ 48 HORAS
-- REABILITAÇÃO PRECOCE
-- PREVENÇÃO DE NOVOS EPISÓDIOS. ENCAMINHAR SEMPRE!</pre>
+Monitor, oximetria, glicemia capilar, ECG. Dieta zero + cabeceira elevada
+SF 0,9% 500 mL de 8/8h para manter acesso só. Hemograma + sódio, potássio, ureia, creat, TAP. IOT se não conseguir proteger via aérea.
+Manter glicemia entre 140 e 180. De 2/2h
+Manter temperatura menor de 37 graus
+Pressão abaixo de 220x120 mmHg (isquêmico). Pressão entre 140-160 se hemorrágico.
+TC mais rápido possível. Enquanto não tem ela, apenas manter pressão.
+- Trombólise em até 4,5 horas
+- Trombectomia em até 6 horas
+- Craniectomia em até 48 horas
+- Reabilitação precoce
+- Prevenção de novos episódios. Encaminhar sempre!</pre>
             </div>
 
             <div class="item">
                 <h3>TEP e TVP</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre>TROMBOSE VENOSA PROFUNDA (TVP):
-A CLÍNICA NÃO É SOBERANA NESSE CASO, PRECISA DO DOPPLER! REALIZAR ESCORE DE WELLS PARA TEP. SE BAIXA PROBABILIDADE, FAZER D-DÍMERO. SE NÃO HOUVER DOPPLER NA UNIDADE, FAZER ENOXAPARINA 1MG/KG SUBCUTANEO E ENCAMINHAR. ALEM DE ANTIINFLAMATÓRIOS E ANALGÉSICOS.
+                <pre>Trombose venosa profunda (TVP):
+A clínica não é soberana nesse caso, precisa do Doppler! Realizar escore de Wells para TEP. Se baixa probabilidade, fazer D-dímero. Se não houver Doppler na unidade, fazer enoxaparina 1 mg/kg subcutâneo e encaminhar. Além de anti-inflamatórios e analgésicos.
 
-TROMBOEMBOLISMO PULMONAR (TEP):
-DISPNEIA, DOR PLEURÍTICA, TOSSE, HEMOPTISE, TAQUIPNEIA, TAQUICARDIA, SINAIS DE TVP, DERRAME PLEURAL, FEBRE.
-RX: SINAL DE WESTERMARK, CORCOVA DE HAMPTON, SINAL DE PALLA.
-DX PADRÃO OURO: ARTERIOGRAFIA PULMONAR.
-SUSPEITA DE TEP COM CHOQUE OU HIPOTENSÃO: ANGIOTC DE TÓRAX IMEDIATAMENTE!
-SUSPEITA DE TEP SEM CHOQUE OU HIPOTENSÃO: ESCORE DE WELLS. SE BAIXA OU INTERMEDIÁRIA, D-DÍMERO. SE POSITIVO, ANGIO TC.
-- MANTER INR ENTRE 2 E 3 POR AO MENOS 3 MESES. TROMBÓLISE PODE INICIAR EM ATÉ 14 DIAS APÓS INICIO DOS SINTOMAS.
-HEPARINA NÃO-FRACIONADA: DOSE DE ATAQUE EV DE 80U/KG + MANUTENÇÃO.
-ENOXAPARINA 2MG</pre>
+Tromboembolismo pulmonar (TEP):
+Dispneia, dor pleurítica, tosse, hemoptise, taquipneia, taquicardia, sinais de TVP, derrame pleural, febre.
+RX: sinal de Westermark, corcova de Hampton, sinal de Palla.
+Dx padrão ouro: arteriografia pulmonar.
+Suspeita de TEP com choque ou hipotensão: angioTC de tórax imediatamente!
+Suspeita de TEP sem choque ou hipotensão: escore de Wells. Se baixa ou intermediária, D-dímero. Se positivo, angioTC.
+- Manter INR entre 2 e 3 por ao menos 3 meses. Trombólise pode iniciar em até 14 dias após início dos sintomas.
+Heparina não fracionada: dose de ataque EV de 80 U/kg + manutenção.
+Enoxaparina 2 mg</pre>
             </div>
 
             <div class="item">
                 <h3>Fibrilação Atrial, Bradiarritmia e Dissecção de Aorta</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre>FIBRILAÇÃO ATRIAL:
-INSTAVEL: CARDIOVERSAO. APÓS DE MIDAZOLAM 5MG EV BOLUS + MORFINA 2ML EV
-ESTAVEL: CHADSVASC. BETABLOQUEADOR. METOPROLOL 5MG VENOSO. PODENDO REPETIR 2X. SE PACIENTE DE ALTO RISCO E COM INICIO DE MAIS DE 24H, PRECISA FAZER ANTICOAGULANTE POR 4 SEMANAS. ENCAMINHAR!!!
+                <pre>Fibrilação atrial:
+Instável: cardioversão. Após de midazolam 5 mg EV bolus + morfina 2 mL EV
+Estável: CHADSVASC. Betabloqueador. Metoprolol 5 mg venoso. Podendo repetir 2x. Se paciente de alto risco e com início de mais de 24h, precisa fazer anticoagulante por 4 semanas. Encaminhar!!!
 
-BRADIARRITIMIA E INSTABILIDADE:
-ATROPINA 1 AMPOLA 1MG EV EM BOLUS DE 5 EM 5 MINUTOS (MÁXIMO DE 3MG).
-ADRENALINA 1MG (1 AMPOLA) + 100ML SG5% EV EM BIC: 12ML/H OU 12 MICROGOTAS/MIN. PREPARANDO MARCAPASSO TRANSCUTANEO. SEDAR E ANALGESIA: MIDAZOLAM 2MG EV LENTO + MORFINA 2MG EV.
+Bradiarritmia e instabilidade:
+Atropina 1 ampola 1 mg EV em bolus de 5 em 5 minutos (máximo de 3 mg).
+Adrenalina 1 mg (1 ampola) + 100 mL SG 5% EV em BIC: 12 mL/h ou 12 microgotas/min. Preparando marcapasso transcutâneo. Sedar e analgesia: midazolam 2 mg EV lento + morfina 2 mg EV.
 
-DISSECÇÃO AGUDA AÓRTICA:
-ALVO FC MENOR 60 E PAS MENOR 120MMHG.
-ESMOLOL 10MG/ML 3ML EV EM 1 MIN. APÓS: ESMOLOL 250MG/ML 10ML + SG5% 240ML FAZER EM BIC 18ML/H OU METOPROLOL 5MG EV BOLUS MAXIMO 15MG.
-NITROPRUSSIATO DE SODIO 1 AMPOLA + SG5% 250ML EM BIC 3ML/H (SE NÃO ATINGIR ALVO DE PA).
-MORFINA 10MG/ML + AD 9ML: 3ML EV 5/5MIN ACM.</pre>
+Dissecção aguda aórtica:
+Alvo FC menor 60 e PAS menor 120 mmHg.
+Esmolol 10 mg/mL 3 mL EV em 1 min. Após: esmolol 250 mg/mL 10 mL + SG 5% 240 mL fazer em BIC 18 mL/h ou metoprolol 5 mg EV bolus máximo 15 mg.
+Nitroprussiato de sódio 1 ampola + SG 5% 250 mL em BIC 3 mL/h (se não atingir alvo de PA).
+Morfina 10 mg/mL + AD 9 mL: 3 mL EV 5/5min ACM.</pre>
             </div>
         </div>
 
         <!-- ===================== DVA / SEDAÇÃO / IOT ===================== -->
         <div id="dva-sedacao" class="section">
-            <h2 class="section-title">DVA, Sedação & IOT</h2>
+            <h2 class="section-title">DVA, Sedação &amp; IOT</h2>
 
             <div class="item">
                 <h3>Intubação Orotraqueal (IOT)</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># INTUBAÇÃO OROTRAQUEAL:
-1. PREPARAÇÃO E PARAMENTAÇÃO DA EQUIPE FORMADA POR MÉDICO, ENFERMEIRO E TÉCNICOS DE ENFERMAGEM.
-2. PRÉ-OXIGENAÇÃO COM BOLSA VÁLVULA MÁSCARA COM FILTRO.
-3. PRÉ-TRATAMENTO COM FENTANIL.
-4. PARALISIA COM SUCCINILCOLINA E INDUÇÃO COM ETOMIDATO/MIDAZOLAM.
-5. POSICIONAMENTO DO PACIENTE COM COXIM SUBOCCIPITAL.
-6. PASSAGEM DE TUBO OROTRAQUEAL NÚMERO 7,5.
-7. CONEXÃO AO CIRCUITO FECHADO.
-8. CONFIRMAÇÃO POR AUSCULTA DE POSICIONAMENTO CORRETO DE TOT.
-9. FIXAÇÃO DE TOT.
+                <pre># Intubação orotraqueal:
+1. Preparação e paramentação da equipe formada por médico, enfermeiro e técnicos de enfermagem.
+2. Pré-oxigenação com bolsa válvula máscara com filtro.
+3. Pré-tratamento com fentanil.
+4. Paralisia com succinilcolina e indução com etomidato/midazolam.
+5. Posicionamento do paciente com coxim suboccipital.
+6. Passagem de tubo orotraqueal número 7,5.
+7. Conexão ao circuito fechado.
+8. Confirmação por ausculta de posicionamento correto de TOT.
+9. Fixação de TOT.
 
-# INDUÇÃO SEQUÊNCIA RÁPIDA:
-1. FENTANIL 50MG/ML: FAZER 3ML EV LENTO EM 60S.
-2. ETOMIDATO 20MG/ML: (0,3MG/KG) 1 AMPOLA EV LENTO.
-3. SUCCINILCOLINA 100MG + 10ML DE ÁGUA DESTILADA: FAZER OS 10ML EV EM BOLUS.
+# Indução sequência rápida:
+1. Fentanil 50 mg/mL: fazer 3 mL EV lento em 60 s.
+2. Etomidato 20 mg/mL: (0,3 mg/kg) 1 ampola EV lento.
+3. Succinilcolina 100 mg + 10 mL de água destilada: fazer os 10 mL EV em bolus.
 
-# MANUTENÇÃO:
-1. FENTANIL/MIDAZOLAM/PROPOFOL
-2. BNM ROCURÔNIO/ATRACÚRIO</pre>
+# Manutenção:
+1. Fentanil/midazolam/propofol
+2. BNM rocurônio/atracúrio</pre>
             </div>
 
             <div class="item">
                 <h3>Diluição de Sedação e Analgesia</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># FENTANIL (infusão 0,7 – 1,0 mcg/kg/h)
-Solução I: SF 0,9% 80 ml + Fentanil 20 ml (50 mcg/ml) = solução 10 mcg/ml
-Solução II: SF 0,9% 100 ml + Fentanil 40 ml (50 mcg/ml) = solução 40 mcg/ml
+                <pre># Fentanil (infusão 0,7 – 1,0 mcg/kg/h)
+Solução I: SF 0,9% 80 mL + fentanil 20 mL (50 mcg/mL) = solução 10 mcg/mL
+Solução II: SF 0,9% 100 mL + fentanil 40 mL (50 mcg/mL) = solução 40 mcg/mL
 
-# MIDAZOLAM (inicia 0,05 mcg/kg/h e titula entre 0,02 – 0,1 mg/kg/h)
-Solução I: SF 0,9% 80 ml + Midazolam 20 ml (5 mg/ml) = solução 1 mg/ml
-Solução II: SF 0,9% 100 ml + Midazolam 40 ml (5 mg/ml) = solução 4 mg/ml
-Solução III: SF 0,9% 100ML + MIDAZOLAM 6 AMP DE 15MG
+# Midazolam (inicia 0,05 mcg/kg/h e titula entre 0,02 – 0,1 mg/kg/h)
+Solução I: SF 0,9% 80 mL + midazolam 20 mL (5 mg/mL) = solução 1 mg/mL
+Solução II: SF 0,9% 100 mL + midazolam 40 mL (5 mg/mL) = solução 4 mg/mL
+Solução III: SF 0,9% 100 mL + midazolam 6 amp de 15 mg
 
-# PROPOFOL (5 – 50 mcg/kg/min)
-Frasco 20ml 1% = solução 10mg/ml (=10.000 mcg/ml)
+# Propofol (5 – 50 mcg/kg/min)
+Frasco 20 mL 1% = solução 10 mg/mL (= 10.000 mcg/mL)
 
-# DEXMEDETOMIDINA (Precedex - infunde 1.0 mcg/kg por 10 min e reduz para 0.2 – 0.7 mcg/kg/h)
-Solução I: SF 0,9% 48ml + Dexmedetomidina 2 ml (100 mcg/ml) = solução 4 mcg/ml
-Solução Dobrada: SF 0,9% 96ml + Dexmedetomidina 4 ml (200 mcg/ml) = solução 4 mcg/ml
+# Dexmedetomidina (Precedex - infunde 1,0 mcg/kg por 10 min e reduz para 0,2 – 0,7 mcg/kg/h)
+Solução I: SF 0,9% 48 mL + dexmedetomidina 2 mL (100 mcg/mL) = solução 4 mcg/mL
+Solução dobrada: SF 0,9% 96 mL + dexmedetomidina 4 mL (200 mcg/mL) = solução 4 mcg/mL
 
-# CETAMINA (infusão 0,05 - 0,4 mg/kg/h)
-Solução: SF 0,9% 90ml + Ketamina 10ml (50mg/ml) = solução 5mg/ml</pre>
+# Cetamina (infusão 0,05 - 0,4 mg/kg/h)
+Solução: SF 0,9% 90 mL + ketamina 10 mL (50 mg/mL) = solução 5 mg/mL</pre>
             </div>
 
             <div class="item">
                 <h3>Bloqueadores Neuromusculares (BNM)</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre>*SUCCINILCOLINA (NÃO INDICADO PARA MANUTENÇÃO, SOMENTE INDUÇÃO)
-*ATRACÚRIO (INFUSÃO 0,65 A 0,78MG/KG/MIN)
-Solução I: SF 0,9% 30 ML + ATRACÚRIO 20 ml/2,5 ml (10 mg/ml)= solução 4mg/ml
-Solução II: SF 0,9% 80ml + Atracúrio 20 ml/2,5ml (10 mg/ml)= solução 2mg/ml
+                <pre>*Succinilcolina (não indicado para manutenção, somente indução)
+*Atracúrio (infusão 0,65 a 0,78 mg/kg/min)
+Solução I: SF 0,9% 30 mL + atracúrio 20 mL/2,5 mL (10 mg/mL) = solução 4 mg/mL
+Solução II: SF 0,9% 80 mL + atracúrio 20 mL/2,5 mL (10 mg/mL) = solução 2 mg/mL
 
 *Cisatracúrio (infusão 0,03 a 0,6 mg/kg/h)
-Solução I: SF 0.9% 100 ML + Cisatracúrio 10 ml (2 mg/ml)= solução 0.18 mg/ml
+Solução I: SF 0,9% 100 mL + cisatracúrio 10 mL (2 mg/mL) = solução 0,18 mg/mL
 
-TABELA DE BNM:
-- Succinilcolina: Indução 1,0 mg/kg | Ação < 1min / até 10 min | Atenção: taquiFC, aumento PIC/PIO, hiperK, anafilaxia, hipertermia maligna
-- Atracúrio: Indução 0,5 | Manutenção 0,65 - 0,78 mg/kg/h | Ação 2-3 min / 20-30 min | Sem efeito cardiovascular, libera histamina
-- Cisatracúrio: Indução 0,1 | Manutenção 0,03 - 0,6 mg/kg/h | Ação 2-3 min / 30-40 min | 4x mais potente que atracúrio, não libera histamina
-- Pancurônio: Indução 0,1 | Ação 3-5 min / 40-60 min | Simpatomimético, não libera histamina, cuidar disfunção rins/figado
-- Rocurônio: Indução 0,6 | Ação 1-2 min / 30-40 min | Efeito cardiovascular mínimo, não libera histamina, mais anafilaxias</pre>
+Tabela de BNM:
+- Succinilcolina: indução 1,0 mg/kg | ação < 1 min / até 10 min | atenção: taquiFC, aumento PIC/PIO, hiperK, anafilaxia, hipertermia maligna
+- Atracúrio: indução 0,5 | manutenção 0,65 - 0,78 mg/kg/h | ação 2-3 min / 20-30 min | sem efeito cardiovascular, libera histamina
+- Cisatracúrio: indução 0,1 | manutenção 0,03 - 0,6 mg/kg/h | ação 2-3 min / 30-40 min | 4x mais potente que atracúrio, não libera histamina
+- Pancurônio: indução 0,1 | ação 3-5 min / 40-60 min | simpatomimético, não libera histamina, cuidar disfunção rins/figado
+- Rocurônio: indução 0,6 | ação 1-2 min / 30-40 min | efeito cardiovascular mínimo, não libera histamina, mais anafilaxias</pre>
             </div>
 
             <div class="item">
                 <h3>Diluição Drogas Vasoativas</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># NOREPINEFRINA
-Solução I: Norepinefrina 1 amp (4 ml) + SG 5% 246 ml = solução 16 mcg/ml.
-Solução II: Norepinefrina 5 ampolas (20 ml) + SG 5% 230 ml = solução 80 mcg/ml.
+                <pre># Norepinefrina
+Solução I: norepinefrina 1 amp (4 mL) + SG 5% 246 mL = solução 16 mcg/mL.
+Solução II: norepinefrina 5 ampolas (20 mL) + SG 5% 230 mL = solução 80 mcg/mL.
 
-# NITROGLICERINA (TRIDIL)
-Diluição: Nitroglicerina 50 mg (10 ml) + SG 5% 240 ml = solução 200 mcg/ml.
-Velocidade de infusão: 5 – 60 ml/h.
+# Nitroglicerina (Tridil)
+Diluição: nitroglicerina 50 mg (10 mL) + SG 5% 240 mL = solução 200 mcg/mL.
+Velocidade de infusão: 5 – 60 mL/h.
 
-# NITROPRUSSIATO DE SÓDIO (NIPRIDE)
-Diluição: Nitroprussiato de sódio 1 amp (2 ml) + SG 5% 248 ml = solução 200 mcg/ml.
-Solução II: Nitroprussiato de sódio 2 amp (4 ml) + SG 5% 246 ml = solução 400 mcg/ml.
+# Nitroprussiato de sódio (Nipride)
+Diluição: nitroprussiato de sódio 1 amp (2 mL) + SG 5% 248 mL = solução 200 mcg/mL.
+Solução II: nitroprussiato de sódio 2 amp (4 mL) + SG 5% 246 mL = solução 400 mcg/mL.
 (Utilizar equipo apropriado para medicações fotossensíveis).
 
-# DOBUTAMINA
-Solução I: Dobutamina 1 ampola (20 ml) + SG 5% 230 ml = solução 1 mg/ml.
-Solução II: Dobutamina 2 ampolas (40 ml) + SG 5% 60 ml = solução 5 mg/ml.
+# Dobutamina
+Solução I: dobutamina 1 ampola (20 mL) + SG 5% 230 mL = solução 1 mg/mL.
+Solução II: dobutamina 2 ampolas (40 mL) + SG 5% 60 mL = solução 5 mg/mL.
 
-# DOPAMINA
-Diluição: Dopamina 5 ampolas (50 ml) + SG 5% 200 ml = solução 1 mg/ml.
+# Dopamina
+Diluição: dopamina 5 ampolas (50 mL) + SG 5% 200 mL = solução 1 mg/mL.
 
-# EPINEFRINA
-Diluição: Epinefrina 1 ampola (1ml) + SF 0,9% 250ml = solução 4 mcg/ml.
-Velocidade de infusão: 30 a 150 ml/h.
+# Epinefrina
+Diluição: epinefrina 1 ampola (1 mL) + SF 0,9% 250 mL = solução 4 mcg/mL.
+Velocidade de infusão: 30 a 150 mL/h.
 
-# AMIODARONA
-Dose de ataque (máximo de 5 mg/kg): amiodarona 300 mg + SF 0,9% 100ml. Infundir em 30 minutos.
-Dose de manutenção: amiodarona 600 a 900 mg + SG 5% 250ml. Infundir em 24 horas (11 ml/h).
+# Amiodarona
+Dose de ataque (máximo de 5 mg/kg): amiodarona 300 mg + SF 0,9% 100 mL. Infundir em 30 minutos.
+Dose de manutenção: amiodarona 600 a 900 mg + SG 5% 250 mL. Infundir em 24 horas (11 mL/h).
 
-# VASOPRESSINA
-Diluição: Vasopressina 2 ampola (2 ml) + SF 0,9% 98 ml = solução 0,4 U/ml.
-Velocidade de infusão: 1,5 a 6 ml/h.</pre>
+# Vasopressina
+Diluição: vasopressina 2 ampolas (2 mL) + SF 0,9% 98 mL = solução 0,4 U/mL.
+Velocidade de infusão: 1,5 a 6 mL/h.</pre>
             </div>
         </div>
 
         <!-- ===================== PCR / ÓBITO / SEPSE ===================== -->
         <div id="pcr-sepse" class="section">
-            <h2 class="section-title">PCR, Óbito & Sepse</h2>
+            <h2 class="section-title">PCR, Óbito &amp; Sepse</h2>
 
             <div class="item">
                 <h3>Parada Cardiorrespiratória (PCR)</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre>PARADA CARDIORRESPIRATÓRIA (PCR)
-- CHAMAR O PACIENTE. SE IRRESPONSIVO, CHAMAR EQUIPE
-- CHECAR PULSO CAROTÍDEO
-- INICIAR COMPRESSAO TORÁCICA IMEDIATAMENTE. LIGAR DESFIBRILADOR E COLOCAR NO MODO PÁ
-- 30 COMPRESSÕES PARA 2 VENTILAÇÕES COM BOLSA VÁLVULA-MÁSCARA
-- QUANDO O DESFIBRILADOR ESTIVER PRONTO, CHECAR O RITMO
+                <pre>Parada cardiorrespiratória (PCR)
+- Chamar o paciente. Se irresponsivo, chamar equipe
+- Checar pulso carotídeo
+- Iniciar compressão torácica imediatamente. Ligar desfibrilador e colocar no modo PÁ
+- 30 compressões para 2 ventilações com bolsa válvula-máscara
+- Quando o desfibrilador estiver pronto, checar o ritmo
 
-FV E TV SEM PULSO: CHOCAR
-SE FOR CHOCÁVEL: DESCONECTAR O AMBU DO TUBO, DESCONECTAR ELETRODO, PASSAR GEL NAS PÃOS, AFASTA!!!!! E CHOQUE IMEDIATO COM CARGA MÁXIMA
-VOLTAR IMEDIATAMENTE RCP 30X2
-PEGAR ACESSO VENOSO
-PROCEDER IOT. MANTER 1 VENTILAÇÃO A CADA 6S QUANDO INTUBA.
-PASSARAM 2 MINUTOS, CHECAR NOVAMENTE RITMO. CHOQUE
-VOLTAR RCP
-ADRENALINA 1 AMPOLA EM BOLUS EV, COM FLUSHING DE 20ML E ELEVA MEMBRO
-2 MINUTOS RCP, CHECA RITMO. CHOQUE
-AMIODARONA 150MG 2 AMPOLAS EM BOLUS SEGUIDA DE FLUSHING
-2 MINUTOS RCP, CHECA RITMO. CHOQUE
-ADRENALINA 1 AMPOLA
-2 MINUTOS RCP, CHECA RITMO. CHOQUE
-AMIODARONA 150MG 1 AMPOLA (ÑÃO REPETIR MAIS, CONTINUAR COM ADRENALINA VEZ SIM VEZ NÃO)
-SE VOLTAR, CHECAR PULSO EM JUGULAR.</pre>
+FV e TV sem pulso: chocar
+Se for chocável: desconectar o Ambu do tubo, desconectar eletrodo, passar gel nas pás, afasta!!!!! E choque imediato com carga máxima
+Voltar imediatamente RCP 30x2
+Pegar acesso venoso
+Proceder IOT. Manter 1 ventilação a cada 6 s quando intuba.
+Passaram 2 minutos, checar novamente ritmo. Choque
+Voltar RCP
+Adrenalina 1 ampola em bolus EV, com flushing de 20 mL e eleva membro
+2 minutos RCP, checa ritmo. Choque
+Amiodarona 150 mg 2 ampolas em bolus seguida de flushing
+2 minutos RCP, checa ritmo. Choque
+Adrenalina 1 ampola
+2 minutos RCP, checa ritmo. Choque
+Amiodarona 150 mg 1 ampola (não repetir mais, continuar com adrenalina vez sim vez não)
+Se voltar, checar pulso em jugular.</pre>
             </div>
 
             <div class="item">
                 <h3>Declaração de Óbito</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># DECLARAÇÃO DE ÓBITO: 
-PACIENTE, ESTADO GRAVÍSSIMO, EM FRANCO CHOQUE SÉPTICO E EM USO DE ALTAS DOSES DE DVA, SOFRE PARADA CARDIORRESPIRATÓRIA EM RITMO ASSISTOLIA. IMEDIATAMENTE, INICIAMOS REANIMAÇÃO CARDIORRESPIRATÓRIA COM RESPECTIVAS MEDICAÇÕES SEGUNDO PROTOCOLO ACLS/AHA, TODAVIA, DURANTE TODO PROCEDIMENTO, PACIENTE NÃO ESBOÇOU NENHUM SINAL DE RETORNO DA CIRCULAÇÃO ESPONTÂNEA. ÀS [HORA ÓBITO], OPTAMOS POR SUSPENDER OS ESFORÇOS. REALIZADO PROTOCOLO DE LINHA RETA, OU SEJA, CHECADO CABOS, GANHOS E DERIVAÇÕES. CONSTATADA AUSÊNCIA DE REFLEXOS DE TRONCO ENCEFÁLICO. ATESTO O ÓBITO E COMUNICO A FAMÍLIA.</pre>
+                <pre># Declaração de óbito:
+Paciente, estado gravíssimo, em franco choque séptico e em uso de altas doses de DVA, sofre parada cardiorrespiratória em ritmo assistolia. Imediatamente, iniciamos reanimação cardiorrespiratória com respectivas medicações segundo protocolo ACLS/AHA, todavia, durante todo procedimento, paciente não esboçou nenhum sinal de retorno da circulação espontânea. Às [hora óbito], optamos por suspender os esforços. Realizado protocolo de linha reta, ou seja, checado cabos, ganhos e derivações. Constatada ausência de reflexos de tronco encefálico. Atesto o óbito e comunico a família.</pre>
             </div>
 
             <div class="item">
                 <h3>Sepse e Abdome Agudo</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre>ABDOME AGUDO / SEPSE:
-1. DIETA ZERO ATÉ SEGUNDA ORDEM
-2. ACESSO CALIBROSO SALINIZADO (2 ACESSOS SE CHOQUE)
-3. RINGER LACTATO 500ML EV AGORA / EXPANSÃO VOLÊMICA DE 30ML/KG EM ATÉ 3 HORAS
-4. CEFTRIAXONA 2G + SF 0,9% 100ML EV (DOSE DE ATAQUE)
-5. METRONIDAZOL 500 MG EV 08/08H
-6. TRAMAL 50 MG + SF 0,9% 100 ML EV 12/12H SE DOR INTENSA
-7. ONDANSETRANA 1 AMPOLA EV 08/08H SE NÁUSEAS
-8. SONDA NASOGASTRICA CALIBROSA ABERTA
-9. SVD E CONTROLE RIGOROSO DE DIURESE
-10. BROMOPRIDA 10MG + AD 10ML EV LENTO
-11. OMEPRAZOL 40MG EV AGORA
-12. DIPIRONA 1G + AD 20ML EV LENTO
-13. MORFINA 10MG + 9ML DE AD: FAZER 3ML EV ACM
+                <pre>Abdome agudo / sepse:
+1. Dieta zero até segunda ordem
+2. Acesso calibroso salinizado (2 acessos se choque)
+3. Ringer lactato 500 mL EV agora / expansão volêmica de 30 mL/kg em até 3 horas
+4. Ceftriaxona 2 g + SF 0,9% 100 mL EV (dose de ataque)
+5. Metronidazol 500 mg EV 08/08h
+6. Tramal 50 mg + SF 0,9% 100 mL EV 12/12h se dor intensa
+7. Ondansetrana 1 ampola EV 08/08h se náuseas
+8. Sonda nasogástrica calibrosa aberta
+9. SVD e controle rigoroso de diurese
+10. Bromoprida 10 mg + AD 10 mL EV lento
+11. Omeprazol 40 mg EV agora
+12. Dipirona 1 g + AD 20 mL EV lento
+13. Morfina 10 mg + 9 mL de AD: fazer 3 mL EV ACM
 
-EXAMES: HMG, NA, K, UREIA, CREAT, LACTATO, TGO, TGP, FA, GGT, AMILASE, TAP, ALBUMINA, HEMOCULTURA 2 AMOSTRAS, EAS, UROCULTURA. RX ABDOME AGUDO. USG ABDME/TC.
+Exames: HMG, Na, K, ureia, creat, lactato, TGO, TGP, FA, GGT, amilase, TAP, albumina, hemocultura 2 amostras, EAS, urocultura. RX abdome agudo. USG abdome/TC.
 
-ATB NA PRIMEIRA HORA, DE PREFERÊNCIA IMEDIATAMENTE. HIPOVOLEMIA PODE LEVAR A LESÃO RENAL AGUDA PRÉ-RENAL POR PERDER LIQUIDO PELO TERCEIRO ESPAÇO.
-EXPANSÃO VOLÊMICA: 30ML/KG EM ATÉ 3 HORAS
-- NÃO REALIZAR FUROSEMIDA!!
-SVD. DROGAS VASOATIVAS SE IRRESPONSIVO A VOLUME (PAM<75)</pre>
+ATB na primeira hora, de preferência imediatamente. Hipovolemia pode levar a lesão renal aguda pré-renal por perder líquido pelo terceiro espaço.
+Expansão volêmica: 30 mL/kg em até 3 horas
+- Não realizar furosemida!!
+SVD. Drogas vasoativas se irresponsivo a volume (PAM < 75)</pre>
             </div>
         </div>
 
@@ -564,7 +794,7 @@ SVD. DROGAS VASOATIVAS SE IRRESPONSIVO A VOLUME (PAM<75)</pre>
             <div class="item">
                 <h3>Punção de Acesso Venoso Central</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># REALIZADA PUNÇÃO DE ACESSO VENOSO CENTRAL:
+                <pre># Realizada punção de acesso venoso central:
 
 1. Realizadas assepsia e antissepsia da região com clorexidina alcoólica e colocação de campos estéreis.
 2. Anestesia local com lidocaína 2%.
@@ -582,7 +812,7 @@ SVD. DROGAS VASOATIVAS SE IRRESPONSIVO A VOLUME (PAM<75)</pre>
             <div class="item">
                 <h3>Drenagem de Tórax</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># DRENAGEM DE TÓRAX:
+                <pre># Drenagem de tórax:
 
 1. Realizadas assepsia e antissepsia com clorexidina alcoólica.
 2. Colocação de campos estéreis.
@@ -598,131 +828,131 @@ SVD. DROGAS VASOATIVAS SE IRRESPONSIVO A VOLUME (PAM<75)</pre>
             <div class="item">
                 <h3>Paracentese (Ascite)</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre>INDICAÇÕES DE PARACENTESE: ASCITE SEM DIAGNÓSTICO PRÉVIO. QUANDO JÁ TEM O DIAGNÓSTICO, MAS ESTÁ TRAZENDO MUITO DESCONFORTO AO PACIENTE. SE SUSPEITA DE PERITONITE BACTERIANA ESPONTÂNEA EM PACIENTES ALCOOLATRAS, POR EXEMPLO.
+                <pre>Indicações de paracentese: ascite sem diagnóstico prévio. Quando já tem o diagnóstico, mas está trazendo muito desconforto ao paciente. Se suspeita de peritonite bacteriana espontânea em pacientes alcoolatras, por exemplo.
 
-FAZER PUNÇÃO EM FOSSA ILÍACA ESQUERDA, ASSEPSIA, ANTISSEPSIA, LUVA ESTÉRIL, ANESTESIA 5-10ML DE LIDOCAINA 2%, FUGIR DE VASOS EPIGÁSTRICOS, ASPIRANDO E INJETANDO DESDE A PELE ATÉ O PERITONIO. TIRAR AGULHA E INSERIR ABOCATH 14 COM SERINGA, COLOCAR PERPENDICULARMENTE. IR INTRODUZINDO E ASPIRANDO. QUANDO CHEGAR LIQUIDO ASCITICO, PARAR DE PROGREDIR A AGULHA. EMPURRAR O CATETER E RETIRAR A AGULHA, TAMPAR COM O DEDO. PEGAR EQUIPO E JUNTAR AO FRASCO COLETOR PARA MENSURAR A QUANTIDADE DE LIQUIDO. NÃO DEIXAR DOBRAR O CATETER, PRENDER COM ESPARADRAPO. DRENAR 4 LITROS PARA NÃO REPOR ALBUMINA.</pre>
+Fazer punção em fossa ilíaca esquerda, assepsia, antissepsia, luva estéril, anestesia 5-10 mL de lidocaína 2%, fugir de vasos epigástricos, aspirando e injetando desde a pele até o peritônio. Tirar agulha e inserir Abocath 14 com seringa, colocar perpendicularmente. Ir introduzindo e aspirando. Quando chegar líquido ascítico, parar de progredir a agulha. Empurrar o cateter e retirar a agulha, tampar com o dedo. Pegar equipo e juntar ao frasco coletor para mensurar a quantidade de líquido. Não deixar dobrar o cateter, prender com esparadrapo. Drenar 4 litros para não repor albumina.</pre>
             </div>
 
             <div class="item">
                 <h3>Cuidados com Feridas e Suturas</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># ANTISSÉPSIA EXAUSTIVA + ANALGÉSIA + SUTURA + CURATIVO:
+                <pre># Antissepsia exaustiva + analgesia + sutura + curativo:
 
-PRESCREVO SINTOMÁTICOS
-1. ORIENTO RETIRADA DE PONTOS EM UBS, NESTA UNIDADE (DAS 08H -11H) OU COM PROFISSIONAL DE SAÚDE CAPACITADO EM 7 -10 DIAS. 
-2. TROCA DE CURATIVO DIÁRIA EM UBS OU NESTA UNIDADE (08H – 11H). 
-3. ORIENTO CUIDADOS DE HIGIENE, LAVAR FERIMENTO DIARIAMENTE COM ÁGUA E SABÃO NEUTRO APENAS. 
-4. ORIENTO SINAIS DE ALARME - VERMELHIDÃO, DOR PROGRESSIVA, SECREÇÃO PURULENTA - RETORNO IMEDIATO CASO INTERCORRÊNCIA OU SE JULGAR NECESSÁRIO.
+Prescrevo sintomáticos
+1. Oriento retirada de pontos em UBS, nesta unidade (das 08h - 11h) ou com profissional de saúde capacitado em 7 - 10 dias.
+2. Troca de curativo diária em UBS ou nesta unidade (08h – 11h).
+3. Oriento cuidados de higiene, lavar ferimento diariamente com água e sabão neutro apenas.
+4. Oriento sinais de alarme - vermelhidão, dor progressiva, secreção purulenta - retorno imediato caso intercorrência ou se julgar necessário.
 
-# ACIDENTE COM PREGO/FERRO/MORDIDA DE ANIMAL DOMÉSTICO:
-1. REALIZAR CURATIVO DIARIAMENTE APÓS HIGIENE COM ÁGUA E SABÃO PROTEX OU GLICERINADO;
-2. REALIZAR VACINA ANTITETÂNICA NA UBS APÓS ATENDIMENTO MÉDICO;
-3. OBSERVAR ANIMAL DOMÉSTICO DURANTE 10 DIAS, EM CASO DE FUGA, MORTE OU MUDANÇAS DE COMPORTAMENTO, VOCÊ DEVERÁ REALIZAR ESQUEMA VACINAL ANTIRRÁBICO COMPLETO COM 04 DOSES NA UBS;
-4. RETORNAR AO ATENDIMENTO SE DOR INTENSA LOCAL, FEBRE OU DEMAIS SINAIS DE ALARME ORIENTADOS DURANTE ATENDIMENTO.
+# Acidente com prego/ferro/mordida de animal doméstico:
+1. Realizar curativo diariamente após higiene com água e sabão Protex ou glicerinado;
+2. Realizar vacina antitetânica na UBS após atendimento médico;
+3. Observar animal doméstico durante 10 dias, em caso de fuga, morte ou mudanças de comportamento, você deverá realizar esquema vacinal antirrábico completo com 04 doses na UBS;
+4. Retornar ao atendimento se dor intensa local, febre ou demais sinais de alarme orientados durante atendimento.
 
-USO TÓPICO:
-1. NEBACETIN POMADA - 1 FR - PASSAR 2 VEZES AO DIA - 12/12 HORAS.
-2. DERSANI - 1 FR - PASSAR 2 VEZES AO DIA - 12/12 HORAS.
-3. REALIZAÇÃO DE CURATIVO - GAZES, ESPARADRAPO, PANO DE GAZES, SF 0,9%, SABONETE GLICERINADO OU PROTEX, FAIXAS PARA REALIZAÇÃO DE CURATIVOS - REALIZAR CURATIVO DE 12/12 HORAS.
+Uso tópico:
+1. Nebacetin pomada - 1 fr - passar 2 vezes ao dia - 12/12 horas.
+2. Dersani - 1 fr - passar 2 vezes ao dia - 12/12 horas.
+3. Realização de curativo - gazes, esparadrapo, pano de gazes, SF 0,9%, sabonete glicerinado ou Protex, faixas para realização de curativos - realizar curativo de 12/12 horas.
 
-# CUIDADOS:
-- SINAIS VITAIS E CUIDADOS GERAIS De 4/4 horas 
-- ORIENTO CUIDADOS DE HIGIENE EM FERIDA 
-- LAVAR FERIMENTO DIARIAMENTE COM SF 0,9% E SABÃO NEUTRO (CLOREXIDINE) APENAS 
-- REALIZAR CURATIVO EM FERIDA DIARIAMENTE APÓS HIGIENE LOCAL 
-- PASSAR POMADA NEOMICINA+BACITRACINA E DERSANI ÓLEO CICATRIZANTE SEMPRE, POR FAVOR 
-- DEPOIS UTILIZAR GAZES, PANO DE GAZES, ESPARADRAPO OU MICROPORE E FAIXAS PARA REALIZAÇÃO DE CURATIVO LOCAL 
-- CUIDADOS COM CURATIVO - ORIENTO SINAIS/SINTOMAS DE ALARME E ALERTA 
-- PROSTRACÃO, FEBRE, EDEMA, VERMELHIDÃO, SENSIBILIDADE AO TOQUE, DOR PROGRESSIVA E SECREÇÃO PURULENTA LOCAL EM FERIDA 
-- RISCO DE INFECÇÃO RELACIONADO A PROCEDIMENTOS INVASIVOS SECUNDÁRIOS À ACESSOS INVASIVOS 
-- DEVERÁ SER REALIZADA TROCA DE ACESSO VENOSO PERIFÉRICO A CADA 72 HORAS OU ANTES SE APRESENTAR SINAIS FLOGÍSTICOS 
-- ANALGESIA 
-- DEVIDO DOR AGUDA RELACIONADA A AGENTE ETIOLÓGICO LESIVO EVIDENCIADO POR EXPRESSÃO FACIAL DE DOR 
-- MEDICAR CONFORME PRESCRIÇÃO MÉDICA De 6/6 horas</pre>
+# Cuidados:
+- Sinais vitais e cuidados gerais de 4/4 horas
+- Oriento cuidados de higiene em ferida
+- Lavar ferimento diariamente com SF 0,9% e sabão neutro (clorexidine) apenas
+- Realizar curativo em ferida diariamente após higiene local
+- Passar pomada neomicina + bacitracina e Dersani óleo cicatrizante sempre, por favor
+- Depois utilizar gazes, pano de gazes, esparadrapo ou micropore e faixas para realização de curativo local
+- Cuidados com curativo - oriento sinais/sintomas de alarme e alerta
+- Prostração, febre, edema, vermelhidão, sensibilidade ao toque, dor progressiva e secreção purulenta local em ferida
+- Risco de infecção relacionado a procedimentos invasivos secundários a acessos invasivos
+- Deverá ser realizada troca de acesso venoso periférico a cada 72 horas ou antes se apresentar sinais flogísticos
+- Analgesia
+- Devido dor aguda relacionada a agente etiológico lesivo evidenciado por expressão facial de dor
+- Medicar conforme prescrição médica de 6/6 horas</pre>
             </div>
         </div>
 
         <!-- ===================== IVAS & RESPIRATÓRIO ===================== -->
         <div id="ivas" class="section">
-            <h2 class="section-title">IVAS & Respiratório</h2>
+            <h2 class="section-title">IVAS &amp; Respiratório</h2>
 
             <div class="item">
                 <h3>Resfriado / Gripe / Tosse</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># RESFRIADO / GRIPE
-USO NASAL:
-1) Soro Fisiológico 0,9% --- 1 frasco - Lavar as narinas até 6x ao dia
-2) Budesonida 50mcg --- 1 frasco - Aplicar 02 jatos em cada narina 12/12h, por 10 dias
+                <pre># Resfriado / gripe
+Uso nasal:
+1) Soro fisiológico 0,9% --- 1 frasco - lavar as narinas até 6x ao dia
+2) Budesonida 50 mcg --- 1 frasco - aplicar 02 jatos em cada narina 12/12h, por 10 dias
 
-USO ORAL:
-1) Dipirona 500mg --- 1 caixa - Tomar 01 a 02 cp VO de 6/6h, se dor ou febre
-2) Ibuprofeno 600mg --- 15 cp - Tomar 01 cp VO de 8/8h, por 5 dias 
-3) Maleato de Dexclorfeniramina + Betametasona xarope --- 1 frasco - Tomar 10ml VO de 6/6h, por 5 dias
-4) Decongex --- 1 caixa - Tomar 1 comprimido de 12/12h de 2 a 5 dias
+Uso oral:
+1) Dipirona 500 mg --- 1 caixa - tomar 01 a 02 cp VO de 6/6h, se dor ou febre
+2) Ibuprofeno 600 mg --- 15 cp - tomar 01 cp VO de 8/8h, por 5 dias
+3) Maleato de dexclorfeniramina + betametasona xarope --- 1 frasco - tomar 10 mL VO de 6/6h, por 5 dias
+4) Decongex --- 1 caixa - tomar 1 comprimido de 12/12h de 2 a 5 dias
 
-# TOSSE
-- Dropropizina 30mg/ml (Tosse seca): Tomar 30 gotas de 6/6h se tosse seca, suspender uso se tosse com catarro.
-- Acetilcisteína 600 mg/5 g sachês: Diluir 01 sachê em ½ copo d'água em temperatura ambiente e tomar à noite antes de deitar, por 7 a 10 dias.
-- Descon 12mg + 15mg: Tomar 01 cp VO de 12/12h, por 7 dias. Descon Xarope: Tomar 10ml de 6/6h, por 5 dias.
-- Bromidrato de dextrometorfano 2 mg/ml: Tomar 10ml de 8/8h se tosse. (Ou 5-10 mL de 4/4 horas; ou 15 mL a cada 6-8 horas).</pre>
+# Tosse
+- Dropropizina 30 mg/mL (tosse seca): tomar 30 gotas de 6/6h se tosse seca, suspender uso se tosse com catarro.
+- Acetilcisteína 600 mg/5 g sachês: diluir 01 sachê em ½ copo d'água em temperatura ambiente e tomar à noite antes de deitar, por 7 a 10 dias.
+- Descon 12 mg + 15 mg: tomar 01 cp VO de 12/12h, por 7 dias. Descon xarope: tomar 10 mL de 6/6h, por 5 dias.
+- Bromidrato de dextrometorfano 2 mg/mL: tomar 10 mL de 8/8h se tosse. (Ou 5-10 mL de 4/4 horas; ou 15 mL a cada 6-8 horas).</pre>
             </div>
 
             <div class="item">
                 <h3>Amigdalite Bacteriana e Laringite</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># AMIGDALITE BACTERIANA 
-USO ORAL:
-1. AMOXICILINA 500MG + CLAVULANATO 125MG - 21 CP (Tomar 1 cp de 8/8h por 7 dias)
-2. DIPIRONA 500MG - 20 CP (Tomar 1 cp de 6/6h se dor e/ou febre)
-3. IBUPROFENO 600MG - 15 CP (Tomar 1 cp de 8/8 horas se dor - evitar usar por mais de 5 dias consecutivos)
-4. PREDNISONA 20MG - 6 CP (Tomar 2 cp por dia, pela manhã, por 3 dias)
+                <pre># Amigdalite bacteriana
+Uso oral:
+1. Amoxicilina 500 mg + clavulanato 125 mg - 21 cp (tomar 1 cp de 8/8h por 7 dias)
+2. Dipirona 500 mg - 20 cp (tomar 1 cp de 6/6h se dor e/ou febre)
+3. Ibuprofeno 600 mg - 15 cp (tomar 1 cp de 8/8 horas se dor - evitar usar por mais de 5 dias consecutivos)
+4. Prednisona 20 mg - 6 cp (tomar 2 cp por dia, pela manhã, por 3 dias)
 
-# LARINGITE
-USO ORAL:
-1. Fexofenadina 180 mg - Tomar 01 cp VO 1x ao dia, por 7 dias.
-2. Prednisolona 40mg - Tomar 01 cp VO pela manhã, por 5 dias.
-3. Dipirona 500mg - Tomar 01 a 02 cp VO, se dor ou febre.</pre>
+# Laringite
+Uso oral:
+1. Fexofenadina 180 mg - tomar 01 cp VO 1x ao dia, por 7 dias.
+2. Prednisolona 40 mg - tomar 01 cp VO pela manhã, por 5 dias.
+3. Dipirona 500 mg - tomar 01 a 02 cp VO, se dor ou febre.</pre>
             </div>
 
             <div class="item">
                 <h3>Sinusite e Rinite</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># SINUSITE
-USO ORAL:
-1. Amoxicilina + Clavulanato 500 + 125 mg ---- 21 cp (Tomar 1cp VO de 8/8 horas, por 07 dias)
-2. Dipirona 500mg ---- 1 caixa (Tomar 01 a 02 cp VO de 6/6h, se dor ou febre)
-3. Prednisolona 20mg ---- 10 cp (Tomar 01 cp VO pela manhã, por 5 dias)
-4. Acetilcisteína 40mg/ML Xarope - 1 FR (Tomar 10 ML, via oral, de 8 em 8 horas por 3 dias)
-
-USO NASAL:
-1) Soro Fisiológico 0,9% ---- 1 frasco (Lavar as narinas 4x ao dia)
-2) Budesonida spray nasal 50mcg ---- 1 frasco (Aplicar 02 jatos em cada narina de 12/12h, por 10 dias)
-
-# RINITE
+                <pre># Sinusite
 Uso oral:
-1. Lemont 10+5mg --- Tomar 01 cp VO por dia, por 14 dias
-Uso Nasal:
-1. Budesonida 50mcg --- Aplicar 02 jatos em cada narina 12/12h, por 10 dias</pre>
+1. Amoxicilina + clavulanato 500 + 125 mg ---- 21 cp (tomar 1 cp VO de 8/8 horas, por 07 dias)
+2. Dipirona 500 mg ---- 1 caixa (tomar 01 a 02 cp VO de 6/6h, se dor ou febre)
+3. Prednisolona 20 mg ---- 10 cp (tomar 01 cp VO pela manhã, por 5 dias)
+4. Acetilcisteína 40 mg/mL xarope - 1 fr (tomar 10 mL, via oral, de 8 em 8 horas por 3 dias)
+
+Uso nasal:
+1) Soro fisiológico 0,9% ---- 1 frasco (lavar as narinas 4x ao dia)
+2) Budesonida spray nasal 50 mcg ---- 1 frasco (aplicar 02 jatos em cada narina de 12/12h, por 10 dias)
+
+# Rinite
+Uso oral:
+1. Lemont 10+5 mg --- tomar 01 cp VO por dia, por 14 dias
+Uso nasal:
+1. Budesonida 50 mcg --- aplicar 02 jatos em cada narina 12/12h, por 10 dias</pre>
             </div>
 
             <div class="item">
                 <h3>Asma (Ambulatorial e Crise)</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># ASMA (AMBULATORIAL)
-USO INALATÓRIO:
-1. Salbutamol 100mcg/dose aerossol spray --- 2 frascos (Inalar 4 jatos de 4/4 horas se dor no peito e/ou falta de ar. Aplicar 04 jatos de 6/6h, por 7 dias em caso de exacerbação)
-2. Dipropionato de Beclometasona + Sulfato de Salbutamol (Clenil HFA 250 mcg) --- 2 frascos (Inalar 2 jatos pela manhã e 2 à noite)
-USO ORAL:
-1. Prednisona 20mg --- 10 cp (Tomar 01 cp VO pela manhã, por 7 dias em caso de crise/exacerbação)
+                <pre># Asma (ambulatorial)
+Uso inalatório:
+1. Salbutamol 100 mcg/dose aerossol spray --- 2 frascos (inalar 4 jatos de 4/4 horas se dor no peito e/ou falta de ar. Aplicar 04 jatos de 6/6h, por 7 dias em caso de exacerbação)
+2. Dipropionato de beclometasona + sulfato de salbutamol (Clenil HFA 250 mcg) --- 2 frascos (inalar 2 jatos pela manhã e 2 à noite)
+Uso oral:
+1. Prednisona 20 mg --- 10 cp (tomar 01 cp VO pela manhã, por 7 dias em caso de crise/exacerbação)
 
-# CRISE ASMÁTICA
-- REALIZAR DE 4 A 10 PUFFS DE SALBUTAMOL 100MCG DE 20 EM 20 MINUTOS POR 1 HORA + PREDNISOLONA 50MG VO (1-2MG/KG ATÉ 40MG PARA CRIANÇAS). OU METILPREDNISOLONA 1 AMPOLA EV OU HIDROCORTISONA 1 AMPOLA EV
-- MANTER SATURAÇÃO DE O2 ENTRE 93-95% EM CATETER DE O2
-- REAVALIAR APÓS 01 HORA. ALTA SE SAT >93%
-SE NÃO MELHORAR:
-SULFATO DE MAGNÉSIO 2G EV, INFUNDIR EM 20 MINUTOS (10ML DE MGSO4 20% + 100ML DE SF0.9% EV EM 20MIN)
-- TERBUTALINA ½ OU 1 AMPOLA É USADA EM CASO DE INDISPONIBILIDADE DE SALBUTAMOL, COMO ALTERNATIVA. PODE SER FEITA SUBCUTÂNEA OU MESMO INTRAMUSCULAR EM CASOS MAIS GRAVES.
-- FENOTEROL OU SALBUTAMOL 10 A 20 GOTAS EM 5ML DE SF0.9% + 40 GOTAS DE BROMETO DE IPRATRÓPIO. 1 INALAÇÃO A CADA 20 MINUTOS POR 1 HORA.</pre>
+# Crise asmática
+- Realizar de 4 a 10 puffs de salbutamol 100 mcg de 20 em 20 minutos por 1 hora + prednisolona 50 mg VO (1-2 mg/kg até 40 mg para crianças). Ou metilprednisolona 1 ampola EV ou hidrocortisona 1 ampola EV
+- Manter saturação de O2 entre 93-95% em cateter de O2
+- Reavaliar após 01 hora. Alta se Sat > 93%
+Se não melhorar:
+Sulfato de magnésio 2 g EV, infundir em 20 minutos (10 mL de MgSO4 20% + 100 mL de SF 0,9% EV em 20 min)
+- Terbutalina ½ ou 1 ampola é usada em caso de indisponibilidade de salbutamol, como alternativa. Pode ser feita subcutânea ou mesmo intramuscular em casos mais graves.
+- Fenoterol ou salbutamol 10 a 20 gotas em 5 mL de SF 0,9% + 40 gotas de brometo de ipratrópio. 1 inalação a cada 20 minutos por 1 hora.</pre>
             </div>
         </div>
 
@@ -733,146 +963,146 @@ SULFATO DE MAGNÉSIO 2G EV, INFUNDIR EM 20 MINUTOS (10ML DE MGSO4 20% + 100ML DE
             <div class="item">
                 <h3>Gastroenterite (GEA)</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># GASTROENTERITE 
-USO ORAL:
-1. Sais de Reidratação Oral --- 4 sachês (Diluir 1 sachê em 1 litro de água fervida/filtrada. Tomar 1 copo (250ml) após cada episódio de diarreia ou vômito)
-2. Floratil (Saccharomyces boulardii) 200mg --- 1 caixa (Tomar 1 cápsula de 12/12 horas por 3 dias)
-3. Metoclopramida 10mg (ou Ondansetrona 4mg/8mg) --- 1 caixa (Tomar 1 comprimido de 8/8 horas se náusea e/ou vômito)
-4. Buscopan Composto (Dipirona 250mg + Escopolamina 10mg) --- 1 caixa (Tomar 1 comprimido de 8/8 horas se dor ou cólica abdominal)
-5. Nitazoxanida 500mg --- Tomar 01 cp VO de 12/12h, por 3 dias (opção)
+                <pre># Gastroenterite
+Uso oral:
+1. Sais de reidratação oral --- 4 sachês (diluir 1 sachê em 1 litro de água fervida/filtrada. Tomar 1 copo (250 mL) após cada episódio de diarreia ou vômito)
+2. Floratil (Saccharomyces boulardii) 200 mg --- 1 caixa (tomar 1 cápsula de 12/12 horas por 3 dias)
+3. Metoclopramida 10 mg (ou ondansetrona 4 mg/8 mg) --- 1 caixa (tomar 1 comprimido de 8/8 horas se náusea e/ou vômito)
+4. Buscopan composto (dipirona 250 mg + escopolamina 10 mg) --- 1 caixa (tomar 1 comprimido de 8/8 horas se dor ou cólica abdominal)
+5. Nitazoxanida 500 mg --- tomar 01 cp VO de 12/12h, por 3 dias (opção)
 
-*** SE GEA INFECCIOSA (+5 dias / Febre / Sangue):
-6. Ciprofloxacino 500mg --- 6 a 10 cp (Tomar 1 cp de 12/12 horas por 3 a 5 dias)</pre>
+*** Se GEA infecciosa (+5 dias / febre / sangue):
+6. Ciprofloxacino 500 mg --- 6 a 10 cp (tomar 1 cp de 12/12 horas por 3 a 5 dias)</pre>
             </div>
 
             <div class="item">
                 <h3>Cistite Simples (ITU)</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># CISTITE SIMPLES 
-USO ORAL:
-1. Nitrofurantoína 100mg - 28 cp (Tomar 1 cp de 6/6h por 7 dias. Ou 1cp de 8/8h por 8 dias)
-2. (Buscopan) Hioscina 10mg - 20 cp (Tomar 1 cp de 6/6h se dor em baixo ventre)
-3. Dipirona 500mg - 20 cp (Tomar 1 cp de 6/6h se dor e/ou febre)
-4. Fenazopiridina 200mg - 6 cp (OPCIONAL) (Tomar 1 cp de 8/8 horas, após a refeição, por até 2 dias - Lembrar que a urina pode ficar alaranjada)
+                <pre># Cistite simples
+Uso oral:
+1. Nitrofurantoína 100 mg - 28 cp (tomar 1 cp de 6/6h por 7 dias. Ou 1 cp de 8/8h por 8 dias)
+2. (Buscopan) Hioscina 10 mg - 20 cp (tomar 1 cp de 6/6h se dor em baixo ventre)
+3. Dipirona 500 mg - 20 cp (tomar 1 cp de 6/6h se dor e/ou febre)
+4. Fenazopiridina 200 mg - 6 cp (opcional) (tomar 1 cp de 8/8 horas, após a refeição, por até 2 dias - lembrar que a urina pode ficar alaranjada)
 
-*** OPÇÕES DE ATB SE ALERGIA/RESISTÊNCIA:
-- Ciprofloxacino 500mg (1cp 12/12h por 5 dias)
-- Fosfomicina (Monuril) 1 sachê (Dissolver em água e tomar dose única à noite)
-- Amoxicilina 875 MG + Clavulanato 125 MG (Clavulin) – 1 CX (Tomar 1 CP de 8/8 horas durante 8 dias)</pre>
+*** Opções de ATB se alergia/resistência:
+- Ciprofloxacino 500 mg (1 cp 12/12h por 5 dias)
+- Fosfomicina (Monuril) 1 sachê (dissolver em água e tomar dose única à noite)
+- Amoxicilina 875 mg + clavulanato 125 mg (Clavulin) – 1 cx (tomar 1 cp de 8/8 horas durante 8 dias)</pre>
             </div>
 
             <div class="item">
                 <h3>Pneumonia Comunitária (PAC)</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># PNEUMONIA COMUNITÁRIA (Tratamento Ambulatorial)
-USO ORAL:
-1. Amoxicilina 500mg + Clavulanato 125mg --- 21 comprimidos (Tomar 01 comprimido de 8/8 horas por 07 dias)
-2. Azitromicina 500mg --- 5 comprimidos (Tomar 01 comprimido uma vez ao dia por 05 dias)
-3. Acetilcisteína 20mg/ml xarope --- 1 frasco (Tomar 10 ml a cada 8 horas por 3 a 5 dias)
-4. Dipirona 500mg --- 10 comprimidos (Tomar 01 comprimido de 6/6 horas se dor ou febre)
+                <pre># Pneumonia comunitária (tratamento ambulatorial)
+Uso oral:
+1. Amoxicilina 500 mg + clavulanato 125 mg --- 21 comprimidos (tomar 01 comprimido de 8/8 horas por 07 dias)
+2. Azitromicina 500 mg --- 5 comprimidos (tomar 01 comprimido uma vez ao dia por 05 dias)
+3. Acetilcisteína 20 mg/mL xarope --- 1 frasco (tomar 10 mL a cada 8 horas por 3 a 5 dias)
+4. Dipirona 500 mg --- 10 comprimidos (tomar 01 comprimido de 6/6 horas se dor ou febre)
 
-- CLARITROMICINA 500MG - Tomar 1 comprimido, via oral, uma vez ao dia por 10 dias.
-- SE AMBULATORIAL + COMORBIDADES, USO DE ATB NOS ULTIMOS 3 MESES, FR ALTERADA: MACROLIDEO (AZITRO/CLARITROMICINA) + BETALACTAMICO (AMOXI/CLAV).</pre>
+- Claritromicina 500 mg - tomar 1 comprimido, via oral, uma vez ao dia por 10 dias.
+- Se ambulatorial + comorbidades, uso de ATB nos últimos 3 meses, FR alterada: macrolídeo (azitro/claritromicina) + betalactâmico (amoxi/clav).</pre>
             </div>
 
             <div class="item">
                 <h3>Dengue (Grupos A, B, C, D)</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># DENGUE
-USO ORAL:
-1) Sais de Reidratação Oral --- 03 sachês (Diluir 01 sachê em 1L de água fervida/filtrada/mineral e tomar ao longo do dia)
-2) Dipirona 500mg --- Tomar 01 a 02 cp VO de 6/6h, se dor ou febre
-3) Paracetamol 750mg --- Tomar 01 cp VO de 6/6h, se dor ou febre
-4) Escopolamina 10mg --- Tomar 01 cp VO de 8/8h, se dor abdominal
-5) Metoclopramida 10mg --- Tomar 01 cp VO de 8/8h, se náuseas ou vômitos
-6) Hidroxivina 25mg --- Tomar 01 cp VO de 8/8h, se coceira
+                <pre># Dengue
+Uso oral:
+1) Sais de reidratação oral --- 03 sachês (diluir 01 sachê em 1 L de água fervida/filtrada/mineral e tomar ao longo do dia)
+2) Dipirona 500 mg --- tomar 01 a 02 cp VO de 6/6h, se dor ou febre
+3) Paracetamol 750 mg --- tomar 01 cp VO de 6/6h, se dor ou febre
+4) Escopolamina 10 mg --- tomar 01 cp VO de 8/8h, se dor abdominal
+5) Metoclopramida 10 mg --- tomar 01 cp VO de 8/8h, se náuseas ou vômitos
+6) Hidroxizina 25 mg --- tomar 01 cp VO de 8/8h, se coceira
 
-** ATENÇÃO: NÃO TOMAR ANTI-INFLAMATÓRIOS (Nimesulida, Ibuprofeno, AAS, Diclofenaco, Cetoprofeno, Meloxicam, Piroxicam).
+** Atenção: não tomar anti-inflamatórios (nimesulida, ibuprofeno, AAS, diclofenaco, cetoprofeno, meloxicam, piroxicam).
 
-SINAIS DE ALARME: DOR ABDOMINAL, DESIDRATAÇÃO, SANGRAMENTOS, AUMENTO DE HT, QUEDA DE PLAQUETAS, SINAIS DE CHOQUE.
-- GRUPO A (Sem comorbidades e Prova do laço negativa): Hidratação oral 60ml/kg/dia (1/3 de isotônicos ou SRO, 2/3 outros líquidos). Analgésicos. NENHUM ANTIINFLAMATORIO. Atento a sinais de alarme.
-- GRUPO B (Comorbidades ou Petéquias na pele): Solicitar hemograma. SF0.9% de 500 a 1000ml EV. Observar HT. Se normal, alta. Retornar todos os dias para novo hemograma. Se subir mais de 10% passa para grupo C.
-- GRUPO C (Sinais de alarme): SF0.9% 10ML/KG na primeira hora. Se melhorar, fase de manutenção: SF0.9% 25ML/KG em 6 horas. Após fazer solução de 1/3 SF0.9% + 2/3 SG5%: Realizar 25ML/KG em 8 horas. Alta se: melhora clínica importante, HT estável por 24h e plaquetas em ascensão acima 50.000.
-- GRUPO D (Sinais de choque): Ressuscitação volêmica: 20ML/H de SF0.9% EM 20 MINUTOS. Repetindo 3x em 1 hora. Se melhorar, passar para grupo C. Se não melhorar: Albumina 20% 3ml/kg/h.</pre>
+Sinais de alarme: dor abdominal, desidratação, sangramentos, aumento de Ht, queda de plaquetas, sinais de choque.
+- Grupo A (sem comorbidades e prova do laço negativa): hidratação oral 60 mL/kg/dia (1/3 de isotônicos ou SRO, 2/3 outros líquidos). Analgésicos. Nenhum anti-inflamatório. Atento a sinais de alarme.
+- Grupo B (comorbidades ou petéquias na pele): solicitar hemograma. SF 0,9% de 500 a 1000 mL EV. Observar Ht. Se normal, alta. Retornar todos os dias para novo hemograma. Se subir mais de 10% passa para grupo C.
+- Grupo C (sinais de alarme): SF 0,9% 10 mL/kg na primeira hora. Se melhorar, fase de manutenção: SF 0,9% 25 mL/kg em 6 horas. Após fazer solução de 1/3 SF 0,9% + 2/3 SG 5%: realizar 25 mL/kg em 8 horas. Alta se: melhora clínica importante, Ht estável por 24h e plaquetas em ascensão acima 50.000.
+- Grupo D (sinais de choque): ressuscitação volêmica: 20 mL/h de SF 0,9% em 20 minutos. Repetindo 3x em 1 hora. Se melhorar, passar para grupo C. Se não melhorar: albumina 20% 3 mL/kg/h.</pre>
             </div>
 
             <div class="item">
                 <h3>Escabiose, H. pylori e Anemia</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># ESCABIOSE
-USO ORAL:
-1. Ivermectina 6mg --- (Dose calculada) - Tomar 02 cp hoje e repetir a mesma dose em 07 dias.
-2. Prometazina 25mg --- 10 cp - Tomar 01 cp à noite por 05 dias se coceira intensa.
-USO TÓPICO: 
-3. Permetrina 5% loção --- 3 a 5 frascos - À noite, após o banho, aplicar a loção em todo o corpo (poupando pescoço/cabeça) e dormir com ela. Na manhã seguinte retirar no banho. Repetir por 3 noites seguidas. Após 7 dias, repetir o uso por mais 3 noites.
-* Orientação: Lavar todas as roupas de cama/banho e secar ao sol. Não compartilhar itens. Tratar familiares sintomáticos.
+                <pre># Escabiose
+Uso oral:
+1. Ivermectina 6 mg --- (dose calculada) - tomar 02 cp hoje e repetir a mesma dose em 07 dias.
+2. Prometazina 25 mg --- 10 cp - tomar 01 cp à noite por 05 dias se coceira intensa.
+Uso tópico:
+3. Permetrina 5% loção --- 3 a 5 frascos - à noite, após o banho, aplicar a loção em todo o corpo (poupando pescoço/cabeça) e dormir com ela. Na manhã seguinte retirar no banho. Repetir por 3 noites seguidas. Após 7 dias, repetir o uso por mais 3 noites.
+* Orientação: lavar todas as roupas de cama/banho e secar ao sol. Não compartilhar itens. Tratar familiares sintomáticos.
 
-# TRATAMENTO H PYLORI
-USO ORAL:
-1. AMOXICILINA 500MG --- TOMAR 2 COMPRIMIDOS, VIA ORAL, DE 12 EM 12 HORAS POR 7 DIAS.
-2. CLARITROMICINA 500MG --- TOMAR 1 COMPRIMIDO, VIA ORAL, DE 12 EM 12 HORAS POR 7 DIAS.
-3. OMEPRAZOL 40MG --- TOMAR 1 COMPRIMIDO, VIA ORAL, DE 12 EM 12 HORAS POR 30 DIAS.
+# Tratamento H. pylori
+Uso oral:
+1. Amoxicilina 500 mg --- tomar 2 comprimidos, via oral, de 12 em 12 horas por 7 dias.
+2. Claritromicina 500 mg --- tomar 1 comprimido, via oral, de 12 em 12 horas por 7 dias.
+3. Omeprazol 40 mg --- tomar 1 comprimido, via oral, de 12 em 12 horas por 30 dias.
 
-# ANEMIA FERROPRIVA
-1. SULFATO FERROSO 40MG --- TOMAR 02 DRÁGEAS DE 08 EM 08 HORAS DURANTE 06 MESES.</pre>
+# Anemia ferropriva
+1. Sulfato ferroso 40 mg --- tomar 02 drágeas de 08 em 08 horas durante 06 meses.</pre>
             </div>
         </div>
 
         <!-- ===================== HAS / DM / CRÔNICAS ===================== -->
         <div id="has-dm" class="section">
-            <h2 class="section-title">HAS, DM & Crônicas</h2>
+            <h2 class="section-title">HAS, DM &amp; Crônicas</h2>
 
             <div class="item">
                 <h3>Hipertensão e Crise Hipertensiva</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># HIPERTENSÃO ARTERIAL - USO CONTÍNUO
-USO ORAL:
-1. ENALAPRIL 10 MG (ou Losartana 50mg) - Tomar 1 comprimido pela manhã e 1 à noite (12/12 horas).
-2. ATENOLOL 25 MG (ou Metoprolol 25mg) - Tomar 1 comprimido pela manhã e 1 à noite (12/12 horas).
-3. HIDROCLOROTIAZIDA 25 MG - Tomar 1 comprimido pela manhã.
-4. SINVASTATINA 20 MG - Tomar 2 comprimidos à noite.
+                <pre># Hipertensão arterial - uso contínuo
+Uso oral:
+1. Enalapril 10 mg (ou losartana 50 mg) - tomar 1 comprimido pela manhã e 1 à noite (12/12 horas).
+2. Atenolol 25 mg (ou metoprolol 25 mg) - tomar 1 comprimido pela manhã e 1 à noite (12/12 horas).
+3. Hidroclorotiazida 25 mg - tomar 1 comprimido pela manhã.
+4. Sinvastatina 20 mg - tomar 2 comprimidos à noite.
 
-# CRISE E EMERGÊNCIA HIPERTENSIVA
-PSEUDOCRISE HIPERTENSIVA: PACIENTE NÃO HIPERTENSO COM PICO PRESSÓRICO (ANSIEDADE, TRAUMA, DOR). NÃO PRESCREVER ANTI-HIPERTENSIVO. OU PACIENTE SABIDAMENTE HIPERTENSO QUE NÃO FAZ USO CORRETO DE MEDICAÇÃO, PODE FAZER AJUSTE DA MEDICAÇÃO E MANDAR EMBORA.
-URGÊNCIA HIPERTENSIVA: HIPERTENSO (SISTÓLICA ACIMA DE 180) + SINTOMAS INESPECÍFICOS. EXCLUIR EDEMA DE PULMÃO, DISSECÇÃO AGUDA DE AORTA, IAM, IC DESCOMPENSADA. TTO: CLONIDINA (0,1 A 0,2MG PODENDO REPETIR A CADA 30MIN. COM DOSE MÁXIMA DE 0,6MG), CAPTOPRIL (25MG VIA ORAL!! ESPERAR 1H, FAZER +25MG. COM DOSE TOTAL EM 24H DE ATÉ 100MG). NÃO USAR FUROSEMIDA, NEM BETA BLOQUEADOR.
-EMERGÊNCIA HIPERTENSIVA: PA > 180X120 + LESÃO DE ÓRGÃO ALVO. REDUZIR DE 20 A 25% EM 1 A 2 HORAS. TTO: NITROGLICERINA (TRIDIL - EFEITOS CORONARIANOS): 10ML + 240ML DE SF0.9%. 200MCG/ML. DOSE DE 5 A 100 MCG/KG/MIN. (5 a 60 ML/H). NITROPRUSSIATO DE SÓDIO (NIPRIDE - EFEITOS PERIFÉRICOS): 2ML + 248ML DE SG 5%. 200MCG/ML. DOSE DE 0,5 A 10 MCG/KG/MIN. NÃO USAR EM IAM.</pre>
+# Crise e emergência hipertensiva
+Pseudocrise hipertensiva: paciente não hipertenso com pico pressórico (ansiedade, trauma, dor). Não prescrever anti-hipertensivo. Ou paciente sabidamente hipertenso que não faz uso correto de medicação, pode fazer ajuste da medicação e mandar embora.
+Urgência hipertensiva: hipertenso (sistólica acima de 180) + sintomas inespecíficos. Excluir edema de pulmão, dissecção aguda de aorta, IAM, IC descompensada. TTO: clonidina (0,1 a 0,2 mg podendo repetir a cada 30 min. Com dose máxima de 0,6 mg), captopril (25 mg via oral!! esperar 1h, fazer +25 mg. Com dose total em 24h de até 100 mg). Não usar furosemida, nem betabloqueador.
+Emergência hipertensiva: PA > 180x120 + lesão de órgão alvo. Reduzir de 20 a 25% em 1 a 2 horas. TTO: nitroglicerina (Tridil - efeitos coronarianos): 10 mL + 240 mL de SF 0,9%. 200 mcg/mL. Dose de 5 a 100 mcg/kg/min. (5 a 60 mL/h). Nitroprussiato de sódio (Nipride - efeitos periféricos): 2 mL + 248 mL de SG 5%. 200 mcg/mL. Dose de 0,5 a 10 mcg/kg/min. Não usar em IAM.</pre>
             </div>
 
             <div class="item">
                 <h3>Diabetes Mellitus e Insulina</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># DIABETES MELLITUS - USO CONTÍNUO
-USO ORAL:
-1. METFORMINA 500 MG ou 850 MG - Tomar 1 comprimido após as refeições. (Iniciar sempre a noite. Se aumentar, adicionar pela manhã).
-2. GLIBENCLAMIDA 5MG (MIN:2,5; MAX: 20 MG) - Tomar 1 comprimido em jejum ou antes das refeições.
+                <pre># Diabetes mellitus - uso contínuo
+Uso oral:
+1. Metformina 500 mg ou 850 mg - tomar 1 comprimido após as refeições. (Iniciar sempre à noite. Se aumentar, adicionar pela manhã).
+2. Glibenclamida 5 mg (min: 2,5; máx: 20 mg) - tomar 1 comprimido em jejum ou antes das refeições.
 
-USO SUBCUTÂNEO:
-3. INSULINA NPH (0,3 a 0,5 U/kg/dia) - Aplicar SC, 2/3 da dose pela manhã e 1/3 da dose à noite.
+Uso subcutâneo:
+3. Insulina NPH (0,3 a 0,5 U/kg/dia) - aplicar SC, 2/3 da dose pela manhã e 1/3 da dose à noite.
 
-# CORREÇÃO DE HGT NO PRONTO ATENDIMENTO (Insulina Regular SC):
-Até 150 mg/dL: Não aplicar
-151 a 200 mg/dL: Aplicar 02 UI
-201 a 250 mg/dL: Aplicar 04 UI
-251 a 300 mg/dL: Aplicar 06 UI
-301 a 350 mg/dL: Aplicar 08 UI
-351 a 400 mg/dL: Aplicar 10 UI
-> 400 mg/dL: Aplicar 12 UI e procurar avaliação médica imediata.
-* Se Hipoglicemia (< 70 mg/dL): 4 ampolas de Glicose 50% EV.
+# Correção de HGT no pronto atendimento (insulina regular SC):
+Até 150 mg/dL: não aplicar
+151 a 200 mg/dL: aplicar 02 UI
+201 a 250 mg/dL: aplicar 04 UI
+251 a 300 mg/dL: aplicar 06 UI
+301 a 350 mg/dL: aplicar 08 UI
+351 a 400 mg/dL: aplicar 10 UI
+> 400 mg/dL: aplicar 12 UI e procurar avaliação médica imediata.
+* Se hipoglicemia (< 70 mg/dL): 4 ampolas de glicose 50% EV.
 
-# HIPOGLICEMIA
-30ML DE GLICOSE 50% E FAZER DIRETO EV LENTO!!!
-OU SORO GLICOSADO + HIDROCORTISONA.
-MANUTENÇÃO SE PACIENTE ESTIVER DESIDRATADO: SF0.9% + 50ML GLICOSE 50%.
-SE CIRROTICO/ALCOOLATRA/DESNUTRIDO: ASSOCIAR TIAMINA 1 AMPOLA EV DIRETO.</pre>
+# Hipoglicemia
+30 mL de glicose 50% e fazer direto EV lento!!!
+Ou soro glicosado + hidrocortisona.
+Manutenção se paciente estiver desidratado: SF 0,9% + 50 mL glicose 50%.
+Se cirrótico/alcoolatra/desnutrido: associar tiamina 1 ampola EV direto.</pre>
             </div>
 
             <div class="item">
                 <h3>Gota</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># GOTA
-USO ORAL:
-1. ALOPURINOL – A dose inicial é de 100 mg/dia, com aumento gradual de 100 mg a cada 2 a 4 semanas, atingindo dose mínima de 300 mg/dia. Deve-se aumentar a dose até atingir o alvo terapêutico (ácido úrico menor que 6 mg/dL ou menor que 5 mg/dL na presença de tofos) ou até a dose máxima de 800 mg.
-2. COLCHICINA 0,5 MG – 8/8 HORAS SE DOR DEVIDO CRISE DE GOTA.
+                <pre># Gota
+Uso oral:
+1. Alopurinol – a dose inicial é de 100 mg/dia, com aumento gradual de 100 mg a cada 2 a 4 semanas, atingindo dose mínima de 300 mg/dia. Deve-se aumentar a dose até atingir o alvo terapêutico (ácido úrico menor que 6 mg/dL ou menor que 5 mg/dL na presença de tofos) ou até a dose máxima de 800 mg.
+2. Colchicina 0,5 mg – 8/8 horas se dor devido crise de gota.
 
 O que pode desencadear as crises de gota? Ingestão de álcool (vinho tinto e cerveja), dieta rica em purina, trauma físico, cirurgias, quimioterapia e uso de diurético.</pre>
             </div>
@@ -880,112 +1110,112 @@ O que pode desencadear as crises de gota? Ingestão de álcool (vinho tinto e ce
 
         <!-- ===================== SINTOMÁTICOS ===================== -->
         <div id="sintomaticos" class="section">
-            <h2 class="section-title">Analgesia & Sintomáticos</h2>
+            <h2 class="section-title">Analgesia &amp; Sintomáticos</h2>
 
             <div class="item">
                 <h3>Dor Muscular / Lombalgia</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># DOR MUSCULAR / LOMBALGIA (CID: M54.5)
-USO ORAL:
-1. Dipirona 500mg --- 1 caixa - Tomar 01 a 02 cps de 6/6 horas, se dor.
-2. Ibuprofeno 600mg (ou Nimesulida 100mg / Cetoprofeno 150mg) --- 1 caixa - Tomar 01 cp de 8/8 horas (Nimesulida/Ceto de 12/12h) se dor forte, por até 5 dias.
-3. Ciclobenzaprina 10mg (ou 5mg) --- 1 caixa - Tomar 01 comprimido à noite, por 5 dias.
-4. Paco (Paracetamol 500mg + Codeína 30mg) --- 1 caixa - Tomar 01 cp de 8/8 horas SE DOR INTENSA refratária.
+                <pre># Dor muscular / lombalgia (CID: M54.5)
+Uso oral:
+1. Dipirona 500 mg --- 1 caixa - tomar 01 a 02 cps de 6/6 horas, se dor.
+2. Ibuprofeno 600 mg (ou nimesulida 100 mg / cetoprofeno 150 mg) --- 1 caixa - tomar 01 cp de 8/8 horas (nimesulida/ceto de 12/12h) se dor forte, por até 5 dias.
+3. Ciclobenzaprina 10 mg (ou 5 mg) --- 1 caixa - tomar 01 comprimido à noite, por 5 dias.
+4. Paco (paracetamol 500 mg + codeína 30 mg) --- 1 caixa - tomar 01 cp de 8/8 horas se dor intensa refratária.
 
-* Prescrição Imediata (PS): Dexametasona 4mg IM + Cetoprofeno 50mg/ml IM.
-* Opções: Diclofenaco sódico 50mg (1cp 12/12h por 5 dias), Nimesulida 100mg (1cp 12/12h por 5 dias).
-* Betametasona 1 AMPOLA IM (Corticoide de depósito por 30 dias).
-* Coltrax IM (Tiocolchicosídeo): Dores musculares da coluna decorrentes de contraturas.</pre>
+* Prescrição imediata (PS): dexametasona 4 mg IM + cetoprofeno 50 mg/mL IM.
+* Opções: diclofenaco sódico 50 mg (1 cp 12/12h por 5 dias), nimesulida 100 mg (1 cp 12/12h por 5 dias).
+* Betametasona 1 ampola IM (corticoide de depósito por 30 dias).
+* Coltrax IM (tiocolchicosídeo): dores musculares da coluna decorrentes de contraturas.</pre>
             </div>
 
             <div class="item">
                 <h3>Enxaqueca e Cefaleia</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># ENXAQUECA / CEFALEIA (CID: G43.0)
-USO ORAL:
-1. Naproxeno 500mg (ou 550mg) --- 1 caixa - Tomar 01 comprimido de 12/12 horas por até 5-7 dias se dor.
-2. Doralgina (ou Dipirona 500mg) --- 1 caixa - Tomar 01 a 02 cps de 6/6 horas, se dor.
-3. Sumatriptana 50mg (ou Naratriptana 2,5mg) --- 1 caixa - Tomar 01 cp quando perceber sinais iniciais de enxaqueca. Se resposta parcial, usar novo cp após, no mínimo, 2 horas.
-4. Metoclopramida 10mg --- 1 caixa - Tomar 01 cp VO de 8/8h, se náuseas ou vômitos associados.
+                <pre># Enxaqueca / cefaleia (CID: G43.0)
+Uso oral:
+1. Naproxeno 500 mg (ou 550 mg) --- 1 caixa - tomar 01 comprimido de 12/12 horas por até 5-7 dias se dor.
+2. Doralgina (ou dipirona 500 mg) --- 1 caixa - tomar 01 a 02 cps de 6/6 horas, se dor.
+3. Sumatriptana 50 mg (ou naratriptana 2,5 mg) --- 1 caixa - tomar 01 cp quando perceber sinais iniciais de enxaqueca. Se resposta parcial, usar novo cp após, no mínimo, 2 horas.
+4. Metoclopramida 10 mg --- 1 caixa - tomar 01 cp VO de 8/8h, se náuseas ou vômitos associados.
 
-* Prescrição para agora (PS): Tramal 50mg/ml EV Agora. Obs: lembrar que costuma causar muita náusea e vômito, sempre associar antiemético.</pre>
+* Prescrição para agora (PS): Tramal 50 mg/mL EV agora. Obs: lembrar que costuma causar muita náusea e vômito, sempre associar antiemético.</pre>
             </div>
 
             <div class="item">
                 <h3>Vertigem / Labirintite</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># VERTIGEM / LABIRINTITE
-USO ORAL:
-1. Betaistina (Labirin/Betina) 24mg (ou 8mg) --- 1 caixa - Tomar 01 cp pela manhã (ou de 8/8 horas para a de 8mg).
-2. Flunarizina (Vertix) 10mg --- 1 caixa - Tomar 01 cp à noite por 10 a 14 dias.
-3. Ibuprofeno 600mg --- 1 caixa - Tomar 1 cp de 8/8 horas se dor.
-4. Prednisona 20mg --- 10 cp - Tomar 1 cp de 12/12 horas por 5 dias (se quadro inflamatório associado).
+                <pre># Vertigem / labirintite
+Uso oral:
+1. Betaistina (Labirin/Betina) 24 mg (ou 8 mg) --- 1 caixa - tomar 01 cp pela manhã (ou de 8/8 horas para a de 8 mg).
+2. Flunarizina (Vertix) 10 mg --- 1 caixa - tomar 01 cp à noite por 10 a 14 dias.
+3. Ibuprofeno 600 mg --- 1 caixa - tomar 1 cp de 8/8 horas se dor.
+4. Prednisona 20 mg --- 10 cp - tomar 1 cp de 12/12 horas por 5 dias (se quadro inflamatório associado).
 
-* Prescrição Crise (PS): Dimenidrinato + Piridoxina (Dramin B6) EV/IM.
-* Outras opções: Cinarizina 75 mg (1 cp ao dia) - Distúrbios circulatórios. Meclin 25 mg (1cp 12/12 h) - Distúrbios equilíbrio, náuseas/vômitos.</pre>
+* Prescrição crise (PS): dimenidrinato + piridoxina (Dramin B6) EV/IM.
+* Outras opções: cinarizina 75 mg (1 cp ao dia) - distúrbios circulatórios. Meclin 25 mg (1 cp 12/12h) - distúrbios equilíbrio, náuseas/vômitos.</pre>
             </div>
 
             <div class="item">
                 <h3>Constipação e Sintomáticos Gerais</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># CONSTIPAÇÃO / OBSTIPAÇÃO (CID: K59)
-USO ORAL:
-- ÓLEO MINERAL: Tomar 15 ML (uma colher de sopa) de 08 em 08 horas por 10 dias.
-- LACTULOSE 667MG/ML: Tomar 15ML, via oral, de 12 em 12 horas por 10 dias.
-- SAIS DE REIDRATAÇÃO ORAL: Dissolver 1 sachê em 1 litro de água e ingerir sempre que possível.
+                <pre># Constipação / obstipação (CID: K59)
+Uso oral:
+- Óleo mineral: tomar 15 mL (uma colher de sopa) de 08 em 08 horas por 10 dias.
+- Lactulose 667 mg/mL: tomar 15 mL, via oral, de 12 em 12 horas por 10 dias.
+- Sais de reidratação oral: dissolver 1 sachê em 1 litro de água e ingerir sempre que possível.
 
-# SINTOMÁTICOS GERAIS
-USO ORAL:
-1. Dipirona 500mg --- 1 caixa - Tomar 01 a 02 cps de 06/06 horas, se dor ou febre
-2. Paracetamol 500mg --- 1 caixa - Tomar 01 a 02 cps de 06/06 horas, se dor ou febre
-3. Ibuprofeno 600mg --- 15 cp - Tomar 01cp de 08/08 horas se dor forte, por até 05 dias
-4. Metoclopramida (Plasil) 10mg (ou Ondansetrona 8mg) --- 1 caixa - Tomar 01cp de 08/08 horas, se náuseas ou vômitos
-5. Escopolamina (Buscopan) 10mg --- 1 caixa - Tomar 01cp de 06/06 horas, se dor abdominal tipo cólica
-6. Simeticona (Luftal) 40mg --- 1 caixa - Tomar 01cp de 08/08 horas se distensão/gases
-7. Omeprazol 20mg --- 1 caixa - Tomar 01cp/dia, pela manhã, em jejum</pre>
+# Sintomáticos gerais
+Uso oral:
+1. Dipirona 500 mg --- 1 caixa - tomar 01 a 02 cps de 06/06 horas, se dor ou febre
+2. Paracetamol 500 mg --- 1 caixa - tomar 01 a 02 cps de 06/06 horas, se dor ou febre
+3. Ibuprofeno 600 mg --- 15 cp - tomar 01 cp de 08/08 horas se dor forte, por até 05 dias
+4. Metoclopramida (Plasil) 10 mg (ou ondansetrona 8 mg) --- 1 caixa - tomar 01 cp de 08/08 horas, se náuseas ou vômitos
+5. Escopolamina (Buscopan) 10 mg --- 1 caixa - tomar 01 cp de 06/06 horas, se dor abdominal tipo cólica
+6. Simeticona (Luftal) 40 mg --- 1 caixa - tomar 01 cp de 08/08 horas se distensão/gases
+7. Omeprazol 20 mg --- 1 caixa - tomar 01 cp/dia, pela manhã, em jejum</pre>
             </div>
         </div>
 
         <!-- ===================== OFTALMO / OTO ===================== -->
         <div id="oftalmo-oto" class="section">
-            <h2 class="section-title">Oftalmologia & Otorrino</h2>
+            <h2 class="section-title">Oftalmologia &amp; Otorrino</h2>
 
             <div class="item">
                 <h3>Conjuntivite e Oftalmológicos</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># DOR/HIPEREMIA EM OLHOS - CONJUNTIVITE
-USO OCULAR/OFTALMOLÓGICO: 
-1. CILODEX (Cloridrato de Ciprofloxacino 3,5 mg/ml + Dexametasona 1 mg/ml) - 1 frasco - Pingar 3 gotas no olho afetado de 6/6 horas por 7 dias. 
-2. CLORIDRATO DE TETRACAÍNA 10 MG/ML + CLORIDRATO DE FENILEFRINA 1MG/ML 10 ML COLÍRIO ANESTÉSICO - 1 FRASCO - Pingar 3 gotas no olho afetado de 3/3 horas se dor.
-3. LUBRIFICANTE OFTÁLMICO COLÍRIO - 1 FRASCO - Pingar 3 gotas no olho afetado de 3/3 horas se dor.
+                <pre># Dor/hiperemia em olhos - conjuntivite
+Uso ocular/oftalmológico:
+1. Cilodex (cloridrato de ciprofloxacino 3,5 mg/mL + dexametasona 1 mg/mL) - 1 frasco - pingar 3 gotas no olho afetado de 6/6 horas por 7 dias.
+2. Cloridrato de tetracaína 10 mg/mL + cloridrato de fenilefrina 1 mg/mL 10 mL colírio anestésico - 1 frasco - pingar 3 gotas no olho afetado de 3/3 horas se dor.
+3. Lubrificante oftálmico colírio - 1 frasco - pingar 3 gotas no olho afetado de 3/3 horas se dor.
 
-# OUTRAS OPÇÕES OFTALMOLÓGICAS
-- Tobramicina oftalmológica 3mg/ml – colírio: Aplicar 01-02 gotas de 04/04 horas no olho afetado.
-- Tobramicina + dexametasona oftalmológico (3mg/ml + 1mg/ml) – colírio: Aplicar 01 a 02 gotas de 06/06 horas no olho afetado.
-- Relestat colírio (1gt 2x/dia por 5 dias)
-- Garasone (3mg+1mg) 20ml (Gentamicina + Betametasona)
-- Cotorolaco 5m (AINES) / 1 gota 4x ao dia.
-- Tobradex/Tobracort colírio: 1gt 4x ao dia por 7 dias.</pre>
+# Outras opções oftalmológicas
+- Tobramicina oftalmológica 3 mg/mL – colírio: aplicar 01-02 gotas de 04/04 horas no olho afetado.
+- Tobramicina + dexametasona oftalmológico (3 mg/mL + 1 mg/mL) – colírio: aplicar 01 a 02 gotas de 06/06 horas no olho afetado.
+- Relestat colírio (1 gt 2x/dia por 5 dias)
+- Garasone (3 mg+1 mg) 20 mL (gentamicina + betametasona)
+- Cotorolaco 5 m (AINES) / 1 gota 4x ao dia.
+- Tobradex/Tobracort colírio: 1 gt 4x ao dia por 7 dias.</pre>
             </div>
 
             <div class="item">
                 <h3>Otites e Otológicos</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># OTITE EXTERNA
-USO OTOLÓGICO:
-1. Otociriax --- Aplicar 4 gotas na orelha afetada de 12/12h por 7 dias.
-2. Otosporin --- Aplicar 4 gotas na orelha afetada de 08/08 horas por 7 dias.
+                <pre># Otite externa
+Uso otológico:
+1. Otociriax --- aplicar 4 gotas na orelha afetada de 12/12h por 7 dias.
+2. Otosporin --- aplicar 4 gotas na orelha afetada de 08/08 horas por 7 dias.
 
-# OUTRAS OPÇÕES OTOLÓGICAS
-- Otosyalar, Oto xilodase, Otosylase: 3gts 4x/dia.
-- Se perfuração MT, usar CILODEX colírio.
-- Se infecção FÚNGICA, usar Ác. acético 2% ou Álcool boricado 3% (5ml).
+# Outras opções otológicas
+- Otosyalar, Oto xilodase, Otosylase: 3 gts 4x/dia.
+- Se perfuração MT, usar Cilodex colírio.
+- Se infecção fúngica, usar ác. acético 2% ou álcool boricado 3% (5 mL).
 
-# IVAS BACTERIANA (Faringoamigdalite/Sinusite/OMA)
-Uso Oral:
-1. Amoxicilina 500mg --- Tomar 01 cp de 08/08 horas por 10 dias
-2. Amoxicilina + Clavulanato (500 + 125 mg) --- 1 cp de 8/8 horas por 07 dias. (875 + 125 mg) --- 1 cp de 12/12h por 07 dias
-3. Uso IM: Benzetacil 1.2 milhão UI dose única</pre>
+# IVAS bacteriana (faringoamigdalite/sinusite/OMA)
+Uso oral:
+1. Amoxicilina 500 mg --- tomar 01 cp de 08/08 horas por 10 dias
+2. Amoxicilina + clavulanato (500 + 125 mg) --- 1 cp de 8/8 horas por 07 dias. (875 + 125 mg) --- 1 cp de 12/12h por 07 dias
+3. Uso IM: Benzetacil 1,2 milhão UI dose única</pre>
             </div>
         </div>
 
@@ -996,55 +1226,55 @@ Uso Oral:
             <div class="item">
                 <h3>Bronquiolite Pediátrica</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre>BRONQUIOLITE (PESO: 12 KG)
-1. DIETA ZERO
-2. ACESSO CALIBROSO SALINIZADO
-3. SF 0,9% 100ML EV 12/12H
-4. CLAVULIN 500MG/100MG -> DILUIR 1 FA EM AD 10 ML -> FAZER 7,2 ML EV BOLUS LENTO (D0-7)
-5. METIL-PREDNISOLONA 500 MG -> DILUIR 1 FA EM 8 ML DE DILUENTE PROPRIO -> ADM 0,1 ML EV 12/12HR
-6. ATROVENT 4 GOTAS + SF 0,9% 5 ML VIA INALATÓRIA 6/6HRS
-7. SALBUTAMOL 2 JATOS CADA 4 HORAS
-8. DIPIRONA 0,2 ML EV 6/6 HORAS SE FEBRE OU DOR
-9. NAUSEDRON 0,3 ML EV 08/08H SE NÁUSEAS
-10. GLICOSE 25% + AD 10 ML EV SE HGT < 60MG/DL
-11. MONITORIZAÇÃO CONTÍNUA DE SATURAÇÃO E FREQUENCIA CARDIACA
-12. SINAIS VITAIS 03/03H + GLICEMIA CAPILAR 06/06H
-13. LAVAGEM NASAL SF 0,9% 10ML EM CADA NARINA 01/01H SE NECESSARIO
-14. O2 SUPLEMENTAR SE SATO2AA <94% E/OU DESCONFORTO RESPIRATÓRIO 0,5LT/MIN</pre>
+                <pre>Bronquiolite (peso: 12 kg)
+1. Dieta zero
+2. Acesso calibroso salinizado
+3. SF 0,9% 100 mL EV 12/12h
+4. Clavulin 500 mg/100 mg -> diluir 1 fa em AD 10 mL -> fazer 7,2 mL EV bolus lento (D0-7)
+5. Metilprednisolona 500 mg -> diluir 1 fa em 8 mL de diluente próprio -> adm 0,1 mL EV 12/12h
+6. Atrovent 4 gotas + SF 0,9% 5 mL via inalatória 6/6h
+7. Salbutamol 2 jatos cada 4 horas
+8. Dipirona 0,2 mL EV 6/6 horas se febre ou dor
+9. Nausedron 0,3 mL EV 08/08h se náuseas
+10. Glicose 25% + AD 10 mL EV se HGT < 60 mg/dL
+11. Monitorização contínua de saturação e frequência cardíaca
+12. Sinais vitais 03/03h + glicemia capilar 06/06h
+13. Lavagem nasal SF 0,9% 10 mL em cada narina 01/01h se necessário
+14. O2 suplementar se SatO2 AA < 94% e/ou desconforto respiratório 0,5 L/min</pre>
             </div>
 
             <div class="item">
                 <h3>Pneumonia Pediátrica (PNM)</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre>PNM PEDIATRIA (PESO: KG)
-1. DIETA GERAL PARA IDADE
-2. ACESSO CALIBROSO SALINIZADO
-3. CLAVULIN ___ MG DE 8/8 HORAS + SF 100 ML EV
-4. DIPIRONA ___ ML EV DE 6/6 HORAS SE DOR OU FEBRE
-5. ONDANSETRONA ___ ML EV DE 8/8 HORAS SE NAUSEA OU VOMITO
-6. SINAIS VITAIS 06/06 HRS
-7. LAVAGEM NASAL SF 0,9% 10ML EM CADA NARINA 01/01H SE NECESSARIO (OBSTRUÇÃO NASAL)
-8. O2 SUPLEMENTAR COM CATETER NASAL SE SATO2 AA <94% E/OU DESCONFORTO RESPIRATÓRIO
-9. CUIDADOS GERAIS E COMUNICAR PLANTONISTA SE INTERCORRÊNCIAS</pre>
+                <pre>PNM pediatria (peso: kg)
+1. Dieta geral para idade
+2. Acesso calibroso salinizado
+3. Clavulin ___ mg de 8/8 horas + SF 100 mL EV
+4. Dipirona ___ mL EV de 6/6 horas se dor ou febre
+5. Ondansetrona ___ mL EV de 8/8 horas se náusea ou vômito
+6. Sinais vitais 06/06 h
+7. Lavagem nasal SF 0,9% 10 mL em cada narina 01/01h se necessário (obstrução nasal)
+8. O2 suplementar com cateter nasal se SatO2 AA < 94% e/ou desconforto respiratório
+9. Cuidados gerais e comunicar plantonista se intercorrências</pre>
             </div>
 
             <div class="item">
                 <h3>Crise Convulsiva Pediátrica</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre>CONVULSÃO PEDIATRIA (PESO: KG)
-1. DIETA ZERO
-2. ACESSO CALIBROSO SALINIZADO
-3. SF 0,9% 100ML EV 12/12H
-4. DIAZEPAM 5MG/ML 0,06ML/KG EV 10/10MIN (REPETIR DOSE ATÉ 3 VEZES)
-5. MIDAZOLAM 5MG/ML 0,04ML/KG EV 10/10MIN (REPETIR DOSE ATÉ 3 VEZES)
-6. FENITOÍNA 50 MG/ML 0,4ML/KG + SF 0,9% 100 ML EV INFUNDIR EM 30 MINUTOS
-7. FENOBARBITAL 100 MG/ML 0,2 ML/KG + SF 0,9% 100 ML EV INFUNDIR EM 30 MINUTOS
-8. DIPIRONA 0,05ML/KG EV 06/06H SE FEBRE OU DOR
-9. NAUSEDRON 0,075ML/KG EV 08/08H SE NÁUSEAS
-10. GLICOSE 25% + AD 10 ML EV SE HGT < 60MG/DL
-11. MONITORIZAÇÃO CONTÍNUA DE SATURAÇÃO E FC
-12. SINAIS VITAIS 03/03H E GLICEMIA CAPILAR 06/06H
-13. O2 SUPLEMENTAR SE SATO2AA <94% E/OU DESCONFORTO RESPIRATÓRIO</pre>
+                <pre>Convulsão pediatria (peso: kg)
+1. Dieta zero
+2. Acesso calibroso salinizado
+3. SF 0,9% 100 mL EV 12/12h
+4. Diazepam 5 mg/mL 0,06 mL/kg EV 10/10 min (repetir dose até 3 vezes)
+5. Midazolam 5 mg/mL 0,04 mL/kg EV 10/10 min (repetir dose até 3 vezes)
+6. Fenitoína 50 mg/mL 0,4 mL/kg + SF 0,9% 100 mL EV infundir em 30 minutos
+7. Fenobarbital 100 mg/mL 0,2 mL/kg + SF 0,9% 100 mL EV infundir em 30 minutos
+8. Dipirona 0,05 mL/kg EV 06/06h se febre ou dor
+9. Nausedron 0,075 mL/kg EV 08/08h se náuseas
+10. Glicose 25% + AD 10 mL EV se HGT < 60 mg/dL
+11. Monitorização contínua de saturação e FC
+12. Sinais vitais 03/03h e glicemia capilar 06/06h
+13. O2 suplementar se SatO2 AA < 94% e/ou desconforto respiratório</pre>
             </div>
         </div>
 
@@ -1055,96 +1285,96 @@ Uso Oral:
             <div class="item">
                 <h3>Doses Rápidas e Fórmulas</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre>SUGESTÕES DE DOSES EM PEDIATRIA ATRAVÉS DE DICAS E MACETES!
+                <pre>Sugestões de doses em pediatria através de dicas e macetes!
 
-# ANALGÉSICOS/ANTITÉRMICOS
-- DIPIRONA Gotas 500mg/ml: 1 gota/kg/dose 6/6hs (máx.: 40gotas/dose)
-- DIPIRONA Injetável: Peso + 20 = dose em ml IV/EV (máx.: 2ml)
-- IBUPROFENO Gotas 50mg/ml: 2 gotas/Kg/dose até de 6/6hs
-- IBUPROFENO Gotas 100mg/ml: 1 gota/Kg/dose até de 6/6hs (máx.: 40gts/dose)
-- PARACETAMOL Gotas 200mg/ml: 1 gota/Kg/dose 4/4 ou 6/6hs (máx.: 50gts/dose)
+# Analgésicos/antitérmicos
+- Dipirona gotas 500 mg/mL: 1 gota/kg/dose 6/6h (máx.: 40 gotas/dose)
+- Dipirona injetável: peso + 20 = dose em mL IV/EV (máx.: 2 mL)
+- Ibuprofeno gotas 50 mg/mL: 2 gotas/kg/dose até de 6/6h
+- Ibuprofeno gotas 100 mg/mL: 1 gota/kg/dose até de 6/6h (máx.: 40 gts/dose)
+- Paracetamol gotas 200 mg/mL: 1 gota/kg/dose 4/4 ou 6/6h (máx.: 50 gts/dose)
 
-# ANTIALÉRGICOS
-- DEXCLORFENIRAMINA 2mg/5ml: Peso + 4 = dose em ml 8/8hs 5 dias (máx.: 5ml/dose)
-- PROMETAZINA Injetável 50mg/2ml: Peso x 0,02 = dose em ml IM. (máx.: 2ml)
+# Antialérgicos
+- Dexclorfeniramina 2 mg/5 mL: peso + 4 = dose em mL 8/8h 5 dias (máx.: 5 mL/dose)
+- Prometazina injetável 50 mg/2 mL: peso x 0,02 = dose em mL IM. (máx.: 2 mL)
 
-# ANTIBIÓTICOS
-- AMOXICILINA 250mg/5ml: Peso + 3 = dose em ml 8/8hs 7 a 14 dias (máx.: 10ml/dose)
-- AMOXICILINA + CLAVULANATO 250 + 62,5mg/5ml: Peso + 4 = dose em ml 8/8hs 7 a 14 dias (máx.: 10ml/dose)
-- CEFALEXINA 250mg/5ml: Peso + 4 = dose em ml 6/6hs 7 a 14 dias (máx.: 10ml/dose)
-- AZITROMICINA (Azit, Astro): Peso + 4 = dose em ml 1x/dia 3-5 dias. (Vide Tabela)
+# Antibióticos
+- Amoxicilina 250 mg/5 mL: peso + 3 = dose em mL 8/8h 7 a 14 dias (máx.: 10 mL/dose)
+- Amoxicilina + clavulanato 250 + 62,5 mg/5 mL: peso + 4 = dose em mL 8/8h 7 a 14 dias (máx.: 10 mL/dose)
+- Cefalexina 250 mg/5 mL: peso + 4 = dose em mL 6/6h 7 a 14 dias (máx.: 10 mL/dose)
+- Azitromicina (Azit, Astro): peso + 4 = dose em mL 1x/dia 3-5 dias. (Vide tabela)
 
-# ANTIEMÉTICOS
-- DIMENIDRATO Gotas 25mg/ml: 1 gota/kg/dose 6/6hs SN. (máx.: 40gotas/dose)
-- METOCLOPRAMIDA Gotas 4mg/ml: 2/3 PESO = dose em gotas 8/8hs SN (máx.: 40gotas/dose)
-- METOCLOPRAMIDA Injetável 10mg/2ml: PESO + 20 = dose em ml IV/EV (máx.: 2ml)
+# Antiéméticos
+- Dimenidrato gotas 25 mg/mL: 1 gota/kg/dose 6/6h SN. (máx.: 40 gotas/dose)
+- Metoclopramida gotas 4 mg/mL: 2/3 peso = dose em gotas 8/8h SN (máx.: 40 gotas/dose)
+- Metoclopramida injetável 10 mg/2 mL: peso + 20 = dose em mL IV/EV (máx.: 2 mL)
 
-# ANTIESPAMÓDICOS
-- ESCOPOLAMINA + DIPIRONA (Buscopan Composto): 1 gota/kg/dose 6/6hs SN (máx.: 40gotas/dose)
+# Antiespasmódicos
+- Escopolamina + dipirona (Buscopan composto): 1 gota/kg/dose 6/6h SN (máx.: 40 gotas/dose)
 
-# CORTICÓIDES
-- DEXAMETASONA Elixir: Peso + 3 = ml/dose 8/8hs 3 a 5 dias. (máx.: 15ml/dose)
-- DEXAMETASONA 4mg/ml: 0,3mg/kg/dose IM ou EV (máx.: 4mg/dose)
-- HIDROCORTISONA 100 e 500 mg: 5mg/kg (ASMA) e 10mg/kg (ALERGIA).
-- PREDNISOLONA 3mg/ml: Peso + 6 = dose em ml 12/12hs 5 dias. (máx.: 20ml/dia)
+# Corticoides
+- Dexametasona elixir: peso + 3 = mL/dose 8/8h 3 a 5 dias. (máx.: 15 mL/dose)
+- Dexametasona 4 mg/mL: 0,3 mg/kg/dose IM ou EV (máx.: 4 mg/dose)
+- Hidrocortisona 100 e 500 mg: 5 mg/kg (asma) e 10 mg/kg (alergia).
+- Prednisolona 3 mg/mL: peso + 6 = dose em mL 12/12h 5 dias. (máx.: 20 mL/dia)
 
-# XAROPES/ASMA
-- SALBUTAMOL Xarope 2mg/5ml: Vide Tabela</pre>
+# Xaropes/asma
+- Salbutamol xarope 2 mg/5 mL: vide tabela</pre>
             </div>
         </div>
 
         <!-- ===================== GINECOLOGIA ===================== -->
         <div id="gineco" class="section">
-            <h2 class="section-title">Ginecologia & ISTs</h2>
+            <h2 class="section-title">Ginecologia &amp; ISTs</h2>
 
             <div class="item">
                 <h3>Vulvovaginites, Cervicites e DIP</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># VULVOVAGINITES E CERVICITES
-> Vaginose Bacteriana (Gardnerella)
+                <pre># Vulvovaginites e cervicites
+> Vaginose bacteriana (Gardnerella)
 - Odor fétido (peixe podre) que piora com relação sexual/menstruação. Leucorreia acinzentada, bolhosa.
-- Metronidazol 500mg 12/12h por 7 dias. (Opção: Clindamicina)
+- Metronidazol 500 mg 12/12h por 7 dias. (Opção: clindamicina)
 
 > Candidíase (Candida)
 - Prurido, disúria, lesões de coçadura. Placas brancas/"coalhada".
-- Fluconazol 150mg VO, dose única (Se não melhorar: usar 1 cp por semana por 6 meses).
-- Miconazol ou Nistatina pomada.
+- Fluconazol 150 mg VO, dose única (se não melhorar: usar 1 cp por semana por 6 meses).
+- Miconazol ou nistatina pomada.
 
 > Tricomoníase (Trichomonas - DST)
 - Prurido, corrimento amarelo-esverdeado bolhoso, colo em framboesa.
-- Metronidazol 2g VO, dose única (ou 500mg 12/12h VO por 7 dias). Tratar parceiro e abstinência sexual.
+- Metronidazol 2 g VO, dose única (ou 500 mg 12/12h VO por 7 dias). Tratar parceiro e abstinência sexual.
 
-> Cervicite (Gonococo e Clamídia)
-- Ceftriaxona 500mg IM dose única + Azitromicina 1g VO dose única (ou Doxiciclina VO 7 dias).
+> Cervicite (gonococo e clamídia)
+- Ceftriaxona 500 mg IM dose única + azitromicina 1 g VO dose única (ou doxiciclina VO 7 dias).
 
-# DOENÇA INFLAMATÓRIA PÉLVICA (DIP)
-DIAGNÓSTICO: 3 Maiores + 1 Menor OU 1 Elaborado.
-- Maiores: Dor hipogástrica, dor anexial, dor à mobilização do colo.
-- Menores: Febre, leucocitose, PCR aumentado, cervicite.
+# Doença inflamatória pélvica (DIP)
+Diagnóstico: 3 maiores + 1 menor ou 1 elaborado.
+- Maiores: dor hipogástrica, dor anexial, dor à mobilização do colo.
+- Menores: febre, leucocitose, PCR aumentado, cervicite.
 
-TRATAMENTO AMBULATORIAL (Estágio 1 - sem peritonite):
-- Ceftriaxona 500mg IM dose única + Metronidazol 250mg (ou 500mg) 12/12h VO por 14 dias + Doxiciclina 100mg 12/12h VO por 14 dias.
+Tratamento ambulatorial (estágio 1 - sem peritonite):
+- Ceftriaxona 500 mg IM dose única + metronidazol 250 mg (ou 500 mg) 12/12h VO por 14 dias + doxiciclina 100 mg 12/12h VO por 14 dias.
 * Reavaliar em 48 a 72 horas. Gestantes, imunocomprometidos e estágios 2, 3 e 4 exigem tratamento hospitalar.</pre>
             </div>
 
             <div class="item">
                 <h3>Úlceras Genitais e Menorragia</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># ÚLCERAS GENITAIS
-> Herpes Simples (Múltiplas, dolorosas, base limpa)
-- Aciclovir 400mg de 8 em 8 horas por 7 dias.
+                <pre># Úlceras genitais
+> Herpes simples (múltiplas, dolorosas, base limpa)
+- Aciclovir 400 mg de 8 em 8 horas por 7 dias.
 
-> Cancro Mole (Múltiplas, dolorosas, base suja/com pus)
-- Azitromicina 1g VO dose única OU Ceftriaxona 500mg IM. Tratar parceiro.
+> Cancro mole (múltiplas, dolorosas, base suja/com pus)
+- Azitromicina 1 g VO dose única ou ceftriaxona 500 mg IM. Tratar parceiro.
 
-> Sífilis (Única, indolor, cancro duro)
-- Penicilina Benzatina (Benzetacil) 2.400.000 UI IM dose única (se sífilis primária).
+> Sífilis (única, indolor, cancro duro)
+- Penicilina benzatina (Benzetacil) 2.400.000 UI IM dose única (se sífilis primária).
 
-# MENORRAGIA
-Uso Oral:
-1. Ácido Tranexâmico 250mg --- Tomar 03cp de 8/8 horas por 5 dias
-2. Ibuprofeno 600mg --- Tomar 01cp de 08/08 horas por até 05 dias
-3. Escopolamina 10mg --- Tomar 01cp de 06/06 horas se cólicas
+# Menorragia
+Uso oral:
+1. Ácido tranexâmico 250 mg --- tomar 03 cp de 8/8 horas por 5 dias
+2. Ibuprofeno 600 mg --- tomar 01 cp de 08/08 horas por até 05 dias
+3. Escopolamina 10 mg --- tomar 01 cp de 06/06 horas se cólicas
 
 - Paciente mulher em idade fértil com sgto e/ou corrimento vaginal: descartar gestação!
 - Metronidazol pode ser dado via intravaginal/creme tópico em gestantes. Obs: lembrar que não pode usar álcool durante o TTO com imidazólicos.</pre>
@@ -1158,127 +1388,127 @@ Uso Oral:
             <div class="item">
                 <h3>Rotina Gestante e Infecções</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># EXAMES GESTANTES
-PRIMEIRO TRIMESTRE: Hemograma, Coagulograma, Tipagem Sanguínea, Fator Rh, Coombs Indireto, Glicemia de jejum, Urina 1, Urocultura, VDRL, Anti-HIV, Toxoplasmose IgG e IgM, Hepatite B (HBsAg), USG obstétrica.
-COMPLEMENTOS: Ácido fólico 400mcg até 12 semanas. Sulfato ferroso das 12 semanas até 60 dias de pós-parto. Vacinas: 3 doses Hep B, Influenza, Covid-19, 3 doses DT (DTpa a partir de 20 semanas).
-24 A 28 SEMANAS: TOTG + repetição dos exames do 1º tri.
-35 A 37 SEMANAS: Pesquisa de Estreptococo do grupo B.
+                <pre># Exames gestantes
+Primeiro trimestre: hemograma, coagulograma, tipagem sanguínea, fator Rh, Coombs indireto, glicemia de jejum, urina 1, urocultura, VDRL, anti-HIV, toxoplasmose IgG e IgM, hepatite B (HBsAg), USG obstétrica.
+Complementos: ácido fólico 400 mcg até 12 semanas. Sulfato ferroso das 12 semanas até 60 dias de pós-parto. Vacinas: 3 doses Hep B, influenza, covid-19, 3 doses DT (DTpa a partir de 20 semanas).
+24 a 28 semanas: TOTG + repetição dos exames do 1º tri.
+35 a 37 semanas: pesquisa de estreptococo do grupo B.
 
-# INFECÇÃO TRATO URINÁRIO NA GESTANTE
-- Profilaxia: Cranberry 400mg 2x ao dia + Vitamina C 100mcg/dia. 2L de água, esvaziamento vesical.
-- Tratamento ATB: Amoxi-Clav por 5 a 7 dias; Nitrofurantoína 100mg 6/6h por 5 dias; Cefuroxima 250mg 8/8h por 5 a 7 dias; Fosfomicina 1g dose única.
+# Infecção trato urinário na gestante
+- Profilaxia: cranberry 400 mg 2x ao dia + vitamina C 100 mcg/dia. 2 L de água, esvaziamento vesical.
+- Tratamento ATB: amoxi-clav por 5 a 7 dias; nitrofurantoína 100 mg 6/6h por 5 dias; cefuroxima 250 mg 8/8h por 5 a 7 dias; fosfomicina 1 g dose única.
 
-# TOXOPLASMOSE NA GESTANTE
-- Se IgM e IgG reagentes: Solicitar teste de avidez de IgG (apenas até 16 semanas).
-  * Baixa avidez (<30%): Infecção aguda. * Alta avidez (>60%): Infecção pregressa.
-- Conduta (Aguda): Espiramicina (Até 16s: 500mg 2cps de 8/8h). Repetir exame em 15 dias.
-  * >16s: Pirimetamina + Sulfadiazina + Ácido Folínico.
+# Toxoplasmose na gestante
+- Se IgM e IgG reagentes: solicitar teste de avidez de IgG (apenas até 16 semanas).
+  * Baixa avidez (< 30%): infecção aguda. * Alta avidez (> 60%): infecção pregressa.
+- Conduta (aguda): espiramicina (até 16s: 500 mg 2 cps de 8/8h). Repetir exame em 15 dias.
+  * > 16s: pirimetamina + sulfadiazina + ácido folínico.
 
-# DIABETES GESTACIONAL
-- Metas HGT: Jejum < 92 | 1h pós-prandial < 180 | 2h pós-prandial < 153.
-- Tratamento: Insulina 0,5 UI/kg/dia (2/3 pela manhã e 1/3 à noite). Ajustes a cada 15 dias.
+# Diabetes gestacional
+- Metas HGT: jejum < 92 | 1h pós-prandial < 180 | 2h pós-prandial < 153.
+- Tratamento: insulina 0,5 UI/kg/dia (2/3 pela manhã e 1/3 à noite). Ajustes a cada 15 dias.
 
-# HIPOTIREOIDISMO GESTACIONAL
-- Alvo: TSH menor ou igual a 2,5. Tratamento: Levotiroxina 1 a 2 mcg/kg/dia em jejum pela manhã.</pre>
+# Hipotireoidismo gestacional
+- Alvo: TSH menor ou igual a 2,5. Tratamento: levotiroxina 1 a 2 mcg/kg/dia em jejum pela manhã.</pre>
             </div>
 
             <div class="item">
                 <h3>Hemorragia Pós-Parto (HPP)</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># HEMORRAGIA PÓS-PARTO (HPP)
-Profilaxia: 10UI de Ocitocina IM pós-parto, clampeamento do cordão após 60s.
+                <pre># Hemorragia pós-parto (HPP)
+Profilaxia: 10 UI de ocitocina IM pós-parto, clampeamento do cordão após 60 s.
 
-CONDUTA INICIAL:
-- Máscara de O2 8-10L/min, Trendelemburg, SVD.
-- 2 Acessos calibrosos: 1g de Ácido Tranexâmico em 100ml de SF 0,9% em 10 min. (Cristaloides em seguida).
-- Ocitocina: Inicialmente 5UI EV lento em 3 min -> Após 20 a 40 UI em 500ml SF a 250ml/h -> Manutenção a 125ml/h.
-- Se não houver melhora do índice de choque após 1500ml de cristaloide: Transfusão (Hemácias O-).
+Conduta inicial:
+- Máscara de O2 8-10 L/min, Trendelemburg, SVD.
+- 2 acessos calibrosos: 1 g de ácido tranexâmico em 100 mL de SF 0,9% em 10 min. (Cristaloides em seguida).
+- Ocitocina: inicialmente 5 UI EV lento em 3 min -> após 20 a 40 UI em 500 mL SF a 250 mL/h -> manutenção a 125 mL/h.
+- Se não houver melhora do índice de choque após 1500 mL de cristaloide: transfusão (hemácias O-).
 
-CAUSAS (4 Ts):
-1. TÔNUS (Atonia Uterina - 80%): Compressão bimanual (Hamilton) + Ocitocina + Metilergometrina 0,2mg IM 20/20min (evitar em HAS) + Misoprostol 800mcg retal.
-2. TECIDO: Retenção/Acretismo (extração manual/curetagem ou histerectomia).
-3. TRAUMA: Revisão de canal e sutura.
-4. TROMBINA: Coagulopatias (transfusão específica).</pre>
+Causas (4 Ts):
+1. Tônus (atonia uterina - 80%): compressão bimanual (Hamilton) + ocitocina + metilergometrina 0,2 mg IM 20/20 min (evitar em HAS) + misoprostol 800 mcg retal.
+2. Tecido: retenção/acretismo (extração manual/curetagem ou histerectomia).
+3. Trauma: revisão de canal e sutura.
+4. Trombina: coagulopatias (transfusão específica).</pre>
             </div>
 
             <div class="item">
                 <h3>Pré-Eclâmpsia e Eclâmpsia</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># PRÉ-ECLÂMPSIA E CRISE HIPERTENSIVA (PAS = 160 ou PAD = 110)
-- Conduta Inicial (< 34 sem): Decúbito lateral esquerdo, SVD, BCF 1/1h.
-- Hidralazina 20mg (Diluir 1 ampola em 9ml de AD e aplicar 5ml de 20 em 20 min) + Betametasona 12mg IM 24/24h (2 dias).
-- SULFATO DE MAGNÉSIO: 
-  * Ataque: Diluir 8ml de Sulfato de Magnésio a 50% em 12ml de SF 0,9% IV em 20 gotas/min.
-  * Manutenção: Diluir 10ml em 490ml de SF 0,9% IV 100ml/h por 24h (BIC).
-- Monitorar: Diurese, reflexos patelares e FR a cada 4 horas.
-- Antídoto (Intoxicação): 1 ampola de Gluconato de Cálcio 10% IV em bolus.
+                <pre># Pré-eclâmpsia e crise hipertensiva (PAS = 160 ou PAD = 110)
+- Conduta inicial (< 34 sem): decúbito lateral esquerdo, SVD, BCF 1/1h.
+- Hidralazina 20 mg (diluir 1 ampola em 9 mL de AD e aplicar 5 mL de 20 em 20 min) + betametasona 12 mg IM 24/24h (2 dias).
+- Sulfato de magnésio:
+  * Ataque: diluir 8 mL de sulfato de magnésio a 50% em 12 mL de SF 0,9% IV em 20 gotas/min.
+  * Manutenção: diluir 10 mL em 490 mL de SF 0,9% IV 100 mL/h por 24h (BIC).
+- Monitorar: diurese, reflexos patelares e FR a cada 4 horas.
+- Antídoto (intoxicação): 1 ampola de gluconato de cálcio 10% IV em bolus.
 
-# ECLÂMPSIA (Convulsões)
+# Eclâmpsia (convulsões)
 - Manter via aérea pérvia (lateralizar cabeça, cânula de Guedel, O2, aspirar secreções).
-- Administrar Sulfato de Magnésio (Ataque + Manutenção) e Hidralazina conforme protocolo acima.</pre>
+- Administrar sulfato de magnésio (ataque + manutenção) e hidralazina conforme protocolo acima.</pre>
             </div>
         </div>
 
         <!-- ===================== ORTOPEDIA ===================== -->
         <div id="ortopedia" class="section">
-            <h2 class="section-title">Ortopedia & Trauma</h2>
+            <h2 class="section-title">Ortopedia &amp; Trauma</h2>
 
             <div class="item">
                 <h3>Incidências Radiográficas e Imobilizações</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># INCIDÊNCIAS DE RADIOGRAFIA
-MÃOS E PÉS: FRENTE, PERFIL E OBLÍQUO
-ESCAFOIDE: FRENTE E PERFIL, OBLÍQUO PRONADO E DESVIO ULNAR
-PUNHO, COTOVELO, ANTEBRAÇO, PERNA, TORNOZELO, COLUNA: FRENTE E PERFIL
-COLUNA CERVICAL: FRENTE, PERFIL E TRANSORAL
-CLAVÍCULA: FRENTE E ZANCA
-OMBRO: FRENTE VERDADEIRO, PERFIL ESCAPULAR E PERFIL AXILAR
-ARCOS COSTAIS: FRENTE E OBLÍQUO
-BACIA: FRENTE
-QUADRIL: PERFIL
-JOELHO: FRENTE, PERFIL E AXIAL
+                <pre># Incidências de radiografia
+Mãos e pés: frente, perfil e oblíquo
+Escafoide: frente e perfil, oblíquo pronado e desvio ulnar
+Punho, cotovelo, antebraço, perna, tornozelo, coluna: frente e perfil
+Coluna cervical: frente, perfil e transoral
+Clavícula: frente e Zanca
+Ombro: frente verdadeiro, perfil escapular e perfil axilar
+Arcos costais: frente e oblíquo
+Bacia: frente
+Quadril: perfil
+Joelho: frente, perfil e axial
 
-# TALAS E GESSO
-- TALA BOTA OU SURO PODÁLICA: Indicada para algumas fraturas e pós-cirúrgico, entorse e luxação.
-- TALA TUBO OU INGUINOMALEOLAR: Imobiliza o joelho, limitando movimentos de flexão e extensão.
-- TALA INGUINO PODÁLICA: Provisória para fraturas de tíbia e patela.
-- TALA HEMIPELVEPODÁLICA OU TALA SPICA: Imobilização de todo o fêmur até a cirurgia.
-- TALA LUVA OU ANTEBRAQUIOPALMAR: Restringe os movimentos do punho.
-- TALA BRAQUIAL OU ÁXILO PALMAR: Paralisa os movimentos do braço até acima do cotovelo.
-- TALA PINÇA DE CONFEITEIRO: Para fraturas de úmero.
-- FÉRULA METÁLICA: Retém o movimento das falanges.
+# Talas e gesso
+- Tala bota ou suro podálica: indicada para algumas fraturas e pós-cirúrgico, entorse e luxação.
+- Tala tubo ou inguinomaleolar: imobiliza o joelho, limitando movimentos de flexão e extensão.
+- Tala inguinopodálica: provisória para fraturas de tíbia e patela.
+- Tala hemipelvepodálica ou tala spica: imobilização de todo o fêmur até a cirurgia.
+- Tala luva ou antebraquiopalmar: restringe os movimentos do punho.
+- Tala braquial ou áxilo palmar: paralisa os movimentos do braço até acima do cotovelo.
+- Tala pinça de confeiteiro: para fraturas de úmero.
+- Férula metálica: retém o movimento das falanges.
 
-- BOTA GESSADA SEM SALTO: Para fraturas, luxações ou entorse de tornozelo.
-- BOTA GESSADA COM SALTO: Permite pisar no chão.
-- SARMIENTO GESSADO OU PTB: Para fratura de tíbia.
-- TUBO GESSADO OU INGUINO MALEOLAR GESSADO: Joelho imobilizado.
-- LUVA GESSADA OU ANTEBRAQUIOPALMAR GESSADO: Sustém os movimentos do punho.
+- Bota gessada sem salto: para fraturas, luxações ou entorse de tornozelo.
+- Bota gessada com salto: permite pisar no chão.
+- Sarmiento gessado ou PTB: para fratura de tíbia.
+- Tubo gessado ou inguinomaleolar gessado: joelho imobilizado.
+- Luva gessada ou antebraquiopalmar gessado: sustém os movimentos do punho.
 
-ENFAIXAMENTO:
-- VELPEAU DE CREPOM: Imobilizador dos ombros. Usado em luxação de ombro.
-- TIPOIA AMERICANA / TIPOIA SIMPLES: Para limitar movimentos do ombro e repouso dos membros superiores.
-- COLAR CERVICAL: Para torcicolos e inflamações na região.</pre>
+Enfaixamento:
+- Velpeau de crepom: imobilizador dos ombros. Usado em luxação de ombro.
+- Tipoia americana / tipoia simples: para limitar movimentos do ombro e repouso dos membros superiores.
+- Colar cervical: para torcicolos e inflamações na região.</pre>
             </div>
 
             <div class="item">
                 <h3>Prescrição: Fratura de Fêmur</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre>FRATURA DE FÊMUR:
-1. DIETA LEVE PARA HAS E DM
-2. SF 0,9% 250 ML 06/06H EV
-3. CABECEIRA ELEVADA 45º / 30º
-4. CATETER NASAL DE O2 ATÉ 5L/MIN
-5. OMEPRAZOL 01 AMP EV + DILUENTE PRÓPRIO
-6. CLEXANE 40MG SC 01 VEZ AO DIA (CEDO)
-7. TRAMADOL 50 MG SC SE DOR FORTE
-8. DIPIRONA 1 AMP IV 6/6 HORAS SE FEBRE OU DOR
-9. MORFINA 1ML + AD 9 ML - ADM 2ML SE DOR FORTE (INTERVALO MINIMO DE 04 EM 04 HORAS)
-10. LASIX 01 AMP EV ACM SE CONGESTÃO 1X DIA (NÃO ADMINISTRAR SE PA< 110X70MMHG)
-11. TRAÇÃO NO MID SE DOR INTRATÁVEL
-12. ONDANSETRONA 01 AMPOLA EV SE NAUSEAS
-13. INSULINA REGULAR SC PROT NÃO NEFROPATA (GLICOSE 50% 4 AMP IV SE HGT < 70MG/DL)
-14. SINAIS VITAIS DE 6/6H + GLICEMIA CAPILAR 04/04H + CUIDADOS GERAIS
-15. MEDICAÇÕES DE USO CONTÍNUO DA PACIENTE</pre>
+                <pre>Fratura de fêmur:
+1. Dieta leve para HAS e DM
+2. SF 0,9% 250 mL 06/06h EV
+3. Cabeceira elevada 45º / 30º
+4. Cateter nasal de O2 até 5 L/min
+5. Omeprazol 01 amp EV + diluente próprio
+6. Clexane 40 mg SC 01 vez ao dia (cedo)
+7. Tramadol 50 mg SC se dor forte
+8. Dipirona 1 amp IV 6/6 horas se febre ou dor
+9. Morfina 1 mL + AD 9 mL - adm 2 mL se dor forte (intervalo mínimo de 04 em 04 horas)
+10. Lasix 01 amp EV ACM se congestão 1x dia (não administrar se PA < 110x70 mmHg)
+11. Tração no MID se dor intratável
+12. Ondansetrona 01 ampola EV se náuseas
+13. Insulina regular SC prot não nefropata (glicose 50% 4 amp IV se HGT < 70 mg/dL)
+14. Sinais vitais de 6/6h + glicemia capilar 04/04h + cuidados gerais
+15. Medicações de uso contínuo da paciente</pre>
             </div>
         </div>
 
@@ -1289,146 +1519,146 @@ ENFAIXAMENTO:
             <div class="item">
                 <h3>Potássio (Hipercalemia e Hipocalemia)</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre>POTÁSSIO ALTO - HIPERCALEMIA
-1. GLUCONATO DE CÁLCIO 10% 10ML + SG5% 100ML EV CORRER EM 10 MIN (Pode repetir a dose a cada 2 horas se ainda estiver com alterações no ECG).
-2. GLICOSE 50% 100ML + 10UI DE INSULINA REGULAR EV CORRER EM 30 MIN.
-3. FUROSEMIDA 20MG 2 AMPOLAS EV BOLUS.
-4. DEXTRO 1/1H E G50% 30ML EV BOLUS SE HGT < 70.
+                <pre>Potássio alto - hipercalemia
+1. Gluconato de cálcio 10% 10 mL + SG 5% 100 mL EV correr em 10 min (pode repetir a dose a cada 2 horas se ainda estiver com alterações no ECG).
+2. Glicose 50% 100 mL + 10 UI de insulina regular EV correr em 30 min.
+3. Furosemida 20 mg 2 ampolas EV bolus.
+4. Dextro 1/1h e G50% 30 mL EV bolus se HGT < 70.
 
-POTÁSSIO BAIXO – HIPOCALEMIA
-- XAROPE KCL 6% 15ML = 12 mEq
-- KCL CÁPSULA 600MG: 8 mEq/cápsula
-- KCL 19,1% 1 AMPOLA (10ML): 25 mEq de K
-- KCL 10% 1 AMPOLA (10ML): 13,4 MEQ DE K
+Potássio baixo – hipocalemia
+- Xarope KCl 6% 15 mL = 12 mEq
+- KCl cápsula 600 mg: 8 mEq/cápsula
+- KCl 19,1% 1 ampola (10 mL): 25 mEq de K
+- KCl 10% 1 ampola (10 mL): 13,4 mEq de K
 
-LEVE (3 a 3,4 mEq/L) e sem perdas ou alterações ECG: Dar 15ML de Xarope de KCL de 6 em 6 horas (20 a 80 mEq ao dia).
-MODERADA OU GRAVE (< 3) OU SINTOMÁTICA: Reposição VO (40mEq 3 a 4x ao dia) + REPOSIÇÃO EV 20mEq em 2-3 horas.
-- SF 0.9% 480ML + KCl a 10%. Velocidade de 10 a 20 mEq/hora se hipocalemia ameaçadora a vida.
-- Correr 2 ampolas em SF 0,9% 500ml em 4 horas.</pre>
+Leve (3 a 3,4 mEq/L) e sem perdas ou alterações ECG: dar 15 mL de xarope de KCl de 6 em 6 horas (20 a 80 mEq ao dia).
+Moderada ou grave (< 3) ou sintomática: reposição VO (40 mEq 3 a 4x ao dia) + reposição EV 20 mEq em 2-3 horas.
+- SF 0,9% 480 mL + KCl a 10%. Velocidade de 10 a 20 mEq/hora se hipocalemia ameaçadora à vida.
+- Correr 2 ampolas em SF 0,9% 500 mL em 4 horas.</pre>
             </div>
 
             <div class="item">
                 <h3>Sódio Baixo (Hiponatremia)</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre>SÓDIO BAIXO - HIPONATREMIA (Grave de instalação súbita)
-- SF 0.9% 445ML + NaCl 20% 55ML = SOLUÇÃO A 3% 500ML (510 mEq/L de Sódio).
-- Cada 1ML/KG dessa solução aumenta 1 mEq/L na quantidade sérica do paciente.
-Exemplo (70kg, Na 116): Fazer 70 ML dessa solução em 15 min. (Espera-se que vá para 117). Pode repetir mais duas vezes. 
-- Correção de ATÉ 3 mEq na primeira hora. 
-- ATENÇÃO: Corrigir no máximo 7 a 8 mEq em 24 horas!
-- Homem: 3,5ml/kg de solução de NaCl a 3% em 24hs. Dosar Na+ sérico de 4/4hs. 
-- Mulher: 3,0ml/kg de solução de NaCl a 3% em 24hs.</pre>
+                <pre>Sódio baixo - hiponatremia (grave de instalação súbita)
+- SF 0,9% 445 mL + NaCl 20% 55 mL = solução a 3% 500 mL (510 mEq/L de sódio).
+- Cada 1 mL/kg dessa solução aumenta 1 mEq/L na quantidade sérica do paciente.
+Exemplo (70 kg, Na 116): fazer 70 mL dessa solução em 15 min. (Espera-se que vá para 117). Pode repetir mais duas vezes.
+- Correção de até 3 mEq na primeira hora.
+- Atenção: corrigir no máximo 7 a 8 mEq em 24 horas!
+- Homem: 3,5 mL/kg de solução de NaCl a 3% em 24h. Dosar Na+ sérico de 4/4h.
+- Mulher: 3,0 mL/kg de solução de NaCl a 3% em 24h.</pre>
             </div>
 
             <div class="item">
                 <h3>Reposição de Bicarbonato e Urgência Dialítica</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># REPOSIÇÃO DE BICARBONATO: 
-150 ML DE BICARBONATO DE SÓDIO 8,4% + ÁGUA DESTILADA 850 ML (OU SF 0,9% OU SG 5%) : 1000 ML/24H EM BIC 41 ML/H (150MEQ/L).
+                <pre># Reposição de bicarbonato:
+150 mL de bicarbonato de sódio 8,4% + água destilada 850 mL (ou SF 0,9% ou SG 5%): 1000 mL/24h em BIC 41 mL/h (150 mEq/L).
 
-# URGÊNCIA DIALÍTICA: 
-- ACIDOSE: PH < 7,1 
-- ELETRÓLITOS: HIPERCALEMIA SEVERA (>6,5) 
-- INGESTA DE TÓXICOS COMO ALCOOL, DROGAS 
-- SOBRACARGA DE VOLUME 
-- UREMIA: ENCEFALOPATIA, PERICARDITE, CONVULSOES, DISFUNÇAO PLAQUETARIA (>200MG/DL)</pre>
+# Urgência dialítica:
+- Acidose: pH < 7,1
+- Eletrólitos: hipercalemia severa (> 6,5)
+- Ingesta de tóxicos como álcool, drogas
+- Sobrecarga de volume
+- Uremia: encefalopatia, pericardite, convulsões, disfunção plaquetária (> 200 mg/dL)</pre>
             </div>
         </div>
 
         <!-- ===================== PEÇONHENTOS & PSIQUIATRIA ===================== -->
         <div id="peconhentos" class="section">
-            <h2 class="section-title">Peçonhentos & Psiquiatria</h2>
+            <h2 class="section-title">Peçonhentos &amp; Psiquiatria</h2>
 
             <div class="item">
                 <h3>Soros - Ofídicos e Aracnídeos</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre>EM CASOS DE ACIDENTES, LIGUE PARA CIT 0800 721 3000
-(As ampolas devem ser diluídas em Solução Salina ou Glicosada 5% na proporção 1:2 ou 1:5, em gotejamento rápido)
+                <pre>Em casos de acidentes, ligue para CIT 0800 721 3000
+(As ampolas devem ser diluídas em solução salina ou glicosada 5% na proporção 1:2 ou 1:5, em gotejamento rápido)
 
-# JARARACA E CRUZEIRA:
-- TIPO DE SORO: Soro Antibotrópico (SAB) ou Antibotrópico-Crotálico (SABC) 
-- LEVE: 4 ampolas | MODERADO: 8 ampolas | GRAVE: 12 ampolas
+# Jararaca e cruzeira:
+- Tipo de soro: soro antibotrópico (SAB) ou antibotrópico-crotálico (SABC)
+- Leve: 4 ampolas | moderado: 8 ampolas | grave: 12 ampolas
 
-# CASCAVEL:
-- TIPO DE SORO: SAB ou SABC 
-- MODERADO: 10 ampolas | GRAVE: 20 ampolas
+# Cascavel:
+- Tipo de soro: SAB ou SABC
+- Moderado: 10 ampolas | grave: 20 ampolas
 
-# CORAL VERDADEIRA:
-- TIPO DE SORO: Soro Antielapídico 
-- GRAVE: 10 ampolas
+# Coral verdadeira:
+- Tipo de soro: soro antielapídico
+- Grave: 10 ampolas
 
-# ARMADEIRA:
-- TIPO DE SORO: Soro Antiaracnídico (SAA)
-- MODERADO: 5 ampolas | GRAVE: 10 ampolas
+# Armadeira:
+- Tipo de soro: soro antiaracnídico (SAA)
+- Moderado: 5 ampolas | grave: 10 ampolas
 
-# ARANHA MARROM:
-- TIPO DE SORO: SAA ou Soro Antiloxoscélico (SALox)
-- MODERADO: 5 ampolas | GRAVE: 10 ampolas
+# Aranha marrom:
+- Tipo de soro: SAA ou soro antiloxoscélico (SALox)
+- Moderado: 5 ampolas | grave: 10 ampolas
 
-# ESCORPIÃO AMARELO (O Preto costuma ser leve e sem soro):
-- TIPO DE SORO: Soro Antiescorpiônico (SAEsc) ou SAA
-- MODERADO: 2 a 3 ampolas | GRAVE: 4 a 6 ampolas
+# Escorpião amarelo (o preto costuma ser leve e sem soro):
+- Tipo de soro: soro antiescorpiônico (SAEsc) ou SAA
+- Moderado: 2 a 3 ampolas | grave: 4 a 6 ampolas
 
-# LAGARTA TATURANA:
-- TIPO DE SORO: Soro Antilonômico (SALon)
-- MODERADO: 5 ampolas | GRAVE: 10 ampolas</pre>
+# Lagarta taturana:
+- Tipo de soro: soro antilonômico (SALon)
+- Moderado: 5 ampolas | grave: 10 ampolas</pre>
             </div>
 
             <div class="item">
                 <h3>Psiquiatria: Agitação, Alcoolismo e Drogas</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># AGITAÇÃO
-- DIAZEPAM 10MG: 01 ampola IM de 04 em 04 horas. (Se EV: diluir em 10ml de SF0.9% e fazer lento).
-- HALOPERIDOL 5MG: Fazer 01 ampola IM de 30 em 30 minutos (Contenção química).
-- MIDAZOLAM 5MG/ML: Fazer bolus de 1 ml diluídos em 10ml de Água Destilada.
-* Coquetel: 50mg Meperidina (1/2 ampola) + 200mg Fenobarbital + 10mg Diazepam.
+                <pre># Agitação
+- Diazepam 10 mg: 01 ampola IM de 04 em 04 horas. (Se EV: diluir em 10 mL de SF 0,9% e fazer lento).
+- Haloperidol 5 mg: fazer 01 ampola IM de 30 em 30 minutos (contenção química).
+- Midazolam 5 mg/mL: fazer bolus de 1 mL diluídos em 10 mL de água destilada.
+* Coquetel: 50 mg meperidina (1/2 ampola) + 200 mg fenobarbital + 10 mg diazepam.
 
-# ALCOOLISMO (Abstinência / Intoxicação)
-- Soro Glicosado a 50% 50ML EV se glicemia < 60.
-- Soro Ringer Lactato 500ML EV.
-- TIAMINA 100MG/ML: 1 ampola EV ou IM (Fazer ANTES da glicose em desnutridos/cirróticos).
-- METOCLOPRAMIDA 10MG: Diluir 1 ampola em 10ml de AD e fazer EV.
-- RANITIDINA 50MG: 1 ampola diluída no soro.
+# Alcoolismo (abstinência / intoxicação)
+- Soro glicosado a 50% 50 mL EV se glicemia < 60.
+- Soro Ringer lactato 500 mL EV.
+- Tiamina 100 mg/mL: 1 ampola EV ou IM (fazer antes da glicose em desnutridos/cirróticos).
+- Metoclopramida 10 mg: diluir 1 ampola em 10 mL de AD e fazer EV.
+- Ranitidina 50 mg: 1 ampola diluída no soro.
 
-# PRESCRIÇÃO PSIQUIATRIA (INTERNAÇÃO)
-1. DIETA LEVE, CONFORME ACEITAÇÃO
-2. DIAZEPAM 10 MG 01 CP VO 12/12H
-3. PROMETAZINA 01 AMP IM 12/12H SE AGITAÇAO
-4. DRAMIN B6 01 AMPOLA EV 08/08H SE NÁUSEAS
-5. HALOPERIDOL 01 AMPOLA IM - 08/08H E ACM
-6. PARACETAMOL 40 GOTAS 6/6H SE FEBRE OU DOR
-7. CONTENÇÃO NO LEITO SE HOSTILIDADE
-8. GLICOSE 50% 4 AMP EV SE HGT < 70MG/DL
-9. SINAIS VITAIS 06/06H + CUIDADOS GERAIS
-10. SERTRALINA 1-0-0
-11. NEOZINE GTS 0-0-4GTS
-12. QUETIAPINA 50MG 0-0-1
+# Prescrição psiquiatria (internação)
+1. Dieta leve, conforme aceitação
+2. Diazepam 10 mg 01 cp VO 12/12h
+3. Prometazina 01 amp IM 12/12h se agitação
+4. Dramin B6 01 ampola EV 08/08h se náuseas
+5. Haloperidol 01 ampola IM - 08/08h e ACM
+6. Paracetamol 40 gotas 6/6h se febre ou dor
+7. Contenção no leito se hostilidade
+8. Glicose 50% 4 amp EV se HGT < 70 mg/dL
+9. Sinais vitais 06/06h + cuidados gerais
+10. Sertralina 1-0-0
+11. Neozine gts 0-0-4 gts
+12. Quetiapina 50 mg 0-0-1
 
-# CLASSES DE PSICOFÁRMACOS E INTOXICAÇÕES
-- Antidepressivos (IRS, Tricíclicos, IRSN, IRND, IMAO)
-- Estabilizador de humor: Lítio, Ácido Valpróico, Carbamazepina, Topiramato.
-- Benzodiazepínicos: Diazepam, Midazolam, Lorazepam, Clonazepam.
-- Antipsicóticos: Haloperidol, Clorpromazina (Típicos); Risperidona, Olanzapina (Atípicos).
-- Psicoestimulantes: Metilfenidato, Lisdexanfetamina.
-- Intoxicação por Benzodiazepínicos: Flumazenil. Intoxicação por Opioides: Naloxone.
-- Delirium Tremens (SAA): Tratar com Benzodiazepínicos. Surto Psicótico: Antipsicóticos + Benzodiazepínicos.</pre>
+# Classes de psicofármacos e intoxicações
+- Antidepressivos (IRS, tricíclicos, IRSN, IRND, IMAO)
+- Estabilizador de humor: lítio, ácido valpróico, carbamazepina, topiramato.
+- Benzodiazepínicos: diazepam, midazolam, lorazepam, clonazepam.
+- Antipsicóticos: haloperidol, clorpromazina (típicos); risperidona, olanzapina (atípicos).
+- Psicoestimulantes: metilfenidato, lisdexanfetamina.
+- Intoxicação por benzodiazepínicos: flumazenil. Intoxicação por opioides: naloxone.
+- Delirium tremens (SAA): tratar com benzodiazepínicos. Surto psicótico: antipsicóticos + benzodiazepínicos.</pre>
             </div>
 
             <div class="item">
                 <h3>Alergia / Anafilaxia</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre># ALERGIA / ANAFILAXIA
-ANAFILAXIA: REAÇÃO DE HIPERSENSIBILIDADE COM ENVOLVIMENTO DE 2 OU MAIS SISTEMAS.
-- APLICAR 0,3 A 0,5 ML DE ADRENALINA 1MG/ML VIA INTRAMUSCULAR E REPETIR APÓS 15 MINUTOS SE NECESSÁRIO. (1 AMPOLA TEM 1ML!)
-- FAZER ENTRE 250 E 500ML DE SORO GLICOSADO A 5%.
-- FAZER 01 AMPOLA IV DE HIDROCORTISONA 500MG.
-- DILUIR 01 AMPOLA DE RANITIDINA 50MG EM 20ML DE SORO GLICOSADO 5% IV.
-- DILUIR 01 AMPOLA DE DIFENIDRAMINA 50MG EM 100ML DE SF0.9.
-- APLICAR PROMETAZINA 50MG 01 AMPOLA IM.
+                <pre># Alergia / anafilaxia
+Anafilaxia: reação de hipersensibilidade com envolvimento de 2 ou mais sistemas.
+- Aplicar 0,3 a 0,5 mL de adrenalina 1 mg/mL via intramuscular e repetir após 15 minutos se necessário. (1 ampola tem 1 mL!)
+- Fazer entre 250 e 500 mL de soro glicosado a 5%.
+- Fazer 01 ampola IV de hidrocortisona 500 mg.
+- Diluir 01 ampola de ranitidina 50 mg em 20 mL de soro glicosado 5% IV.
+- Diluir 01 ampola de difenidramina 50 mg em 100 mL de SF 0,9.
+- Aplicar prometazina 50 mg 01 ampola IM.
 
-USO ORAL:
-- DEXAMETASONA 0,5MG --- TOMAR 01 COMPRIMIDO, VIA ORAL, DE 08 EM 08 HORAS POR 3 DIAS.
-- DEXCLORFENIRAMINA 2MG --- TOMAR 01 COMPRIMIDO, VIA ORAL, DE 08 EM 08 HORAS POR 05 DIAS.</pre>
+Uso oral:
+- Dexametasona 0,5 mg --- tomar 01 comprimido, via oral, de 08 em 08 horas por 3 dias.
+- Dexclorfeniramina 2 mg --- tomar 01 comprimido, via oral, de 08 em 08 horas por 05 dias.</pre>
             </div>
         </div>
 
@@ -1439,78 +1669,78 @@ USO ORAL:
             <div class="item">
                 <h3>Tratamento Hospitalar das Patologias Infecciosas</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre>- CELULITE 
-1° ESCOLHA: OXACILINA 2G EV 4/4H OU 6/6H. ALTERNATIVA: CLINDAMICINA 600 MG EV 8/8H. 
+                <pre>- Celulite
+1° escolha: oxacilina 2 g EV 4/4h ou 6/6h. Alternativa: clindamicina 600 mg EV 8/8h.
 
-- DIP 
-1° ESCOLHA: CEFUROXIME 750 MG EV 8/8H OU AMPICILINA/SULBACTAM 3G EV 6/6H + DOXICICLINA 100 MG 12/12H. ALTERNATIVA: CLINDAMICINA 900 MG EV 8/8H + GENTAMICINA 5MG/KG/DIA. OBSERVAÇÕES: MANTER O TRATAMENTO POR 14 DIAS. 
+- DIP
+1° escolha: cefuroxime 750 mg EV 8/8h ou ampicilina/sulbactam 3 g EV 6/6h + doxiciclina 100 mg 12/12h. Alternativa: clindamicina 900 mg EV 8/8h + gentamicina 5 mg/kg/dia. Observações: manter o tratamento por 14 dias.
 
-- ERISIPELA 
-1° ESCOLHA: PENICILINA G 2-4 MILHÕES DE UI EV 4/4H OU 6/6H. ALTERNATIVA: CLINDAMICINA 600 MG EV 8/8H 
+- Erisipela
+1° escolha: penicilina G 2-4 milhões de UI EV 4/4h ou 6/6h. Alternativa: clindamicina 600 mg EV 8/8h
 
-- GERMES MULTIRRESISTENTES 
-1° ESCOLHA: POLIMIXINA B SEMPRE ASSOCIADA A CARBAPENÊMICO OU AMINOGLICOSÍDEO OU TIGECICLINA. OBSERVAÇÕES: ADEQUAR TERAPIA AO ANTIBIOGRAMA E DISCUTIR CASO COM O SCI. 
+- Germes multirresistentes
+1° escolha: polimixina B sempre associada a carbapenêmico ou aminoglicosídeo ou tigeciclina. Observações: adequar terapia ao antibiograma e discutir caso com o SCI.
 
-- GRIPE H1N1 
-1° ESCOLHA: OSELTAMIVIR 75 MG VO 12/12H. OBSERVAÇÕES: TRATAMENTO POR 5 DIAS. NOME COMERCIAL: TAMIFLU. 
+- Gripe H1N1
+1° escolha: oseltamivir 75 mg VO 12/12h. Observações: tratamento por 5 dias. Nome comercial: Tamiflu.
 
-- INFECÇÃO INTRA-ABDOMINAL COMUNITÁRIA 
-1° ESCOLHA: CEFUROXIMA 750 MG 8/8H + METRONIDAZOL 500 MG 8/8H. ALTERNATIVA: AMPICILINA/SULBACTAM 3G EV 6/6H. OBSERVAÇÕES: SE COLEÇÃO INTRA-ABDOMINAL, CONSIDERAR DRENAGEM CIRÚRGICA. 
+- Infecção intra-abdominal comunitária
+1° escolha: cefuroxima 750 mg 8/8h + metronidazol 500 mg 8/8h. Alternativa: ampicilina/sulbactam 3 g EV 6/6h. Observações: se coleção intra-abdominal, considerar drenagem cirúrgica.
 
-- INFECÇÃO INTRA-ABDOMINAL HOSPITALAR 
-1° ESCOLHA: PIPERACILINA/TAZOBACTAM 4,5G 6/6H. ALTERNATIVA: CEFEPIME 2G EV 8/8H + METRONIDAZOL 500 MG EV 8/8H. OBSERVAÇÕES: SE COLEÇÃO INTRA-ABDOMINAL, CONSIDERAR DRENAGEM CIRÚRGICA. 
+- Infecção intra-abdominal hospitalar
+1° escolha: piperacilina/tazobactam 4,5 g 6/6h. Alternativa: cefepime 2 g EV 8/8h + metronidazol 500 mg EV 8/8h. Observações: se coleção intra-abdominal, considerar drenagem cirúrgica.
 
-- MENINGITE 
-1° ESCOLHA: CEFTRIAXONA 2G EV 12/12H. ALTERNATIVA: SE ALERGIA: VANCOMICINA 1G EV 12/12H. OBSERVAÇÕES: SE MAIOR DE 50 ANOS, ASSOCIAR AMPICILINA 2G EV 4/4H. 
+- Meningite
+1° escolha: ceftriaxona 2 g EV 12/12h. Alternativa: se alergia: vancomicina 1 g EV 12/12h. Observações: se maior de 50 anos, associar ampicilina 2 g EV 4/4h.
 
-- NEUTROPENIA FEBRIL 
-1º ESCOLHA: PIPERACILINA/TAZOBACTAM 4,5G 6/6H. ALTERNATIVA: CEFEPIME 2G EV 8/8H. OBSERVAÇÕES: SE SUSPEITA DE GRAM-POSITIVO RESISTENTE, ASSOCIAR VANCOMICINA. 
+- Neutropenia febril
+1º escolha: piperacilina/tazobactam 4,5 g 6/6h. Alternativa: cefepime 2 g EV 8/8h. Observações: se suspeita de gram-positivo resistente, associar vancomicina.
 
-- PÉ DIABÉTICO 
-1º ESCOLHA: AMPICILINA/SULBACTAM 3G EV 6/6H. ALTERNATIVA: PIPERACILINA/TAZOBACTAM 4,5G 6/6H. 
+- Pé diabético
+1º escolha: ampicilina/sulbactam 3 g EV 6/6h. Alternativa: piperacilina/tazobactam 4,5 g 6/6h.
 
-- PIELONEFRITE AGUDA 
-1º ESCOLHA: CEFUROXIMA 750 MG 8/8H. ALTERNATIVA: AMPICILINA/SULBACTAM 3G EV 6/6H OU CIPROFLOXACINO 400 MG 12/12H. OBSERVAÇÕES: SE GESTANTE: CEFALEXINA 500 MG 1 COMPRIMIDO VO 6/6H.
+- Pielonefrite aguda
+1º escolha: cefuroxima 750 mg 8/8h. Alternativa: ampicilina/sulbactam 3 g EV 6/6h ou ciprofloxacino 400 mg 12/12h. Observações: se gestante: cefalexina 500 mg 1 comprimido VO 6/6h.
 
-- PIELONEFRITE HOSPITALAR 
-1º ESCOLHA: PIPERACILINA/TAZOBACTAM 4,5G 6/6H. ALTERNATIVA: CEFEPIME 2G EV 8/8H. OBSERVAÇÕES: ADEQUAR TRATAMENTO CONFORME ANTIBIOGRAMA. 
+- Pielonefrite hospitalar
+1º escolha: piperacilina/tazobactam 4,5 g 6/6h. Alternativa: cefepime 2 g EV 8/8h. Observações: adequar tratamento conforme antibiograma.
 
-- PNEUMONIA COMUNITÁRIA 
-1º ESCOLHA: AZITROMICINA 500 MG VO 1X/DIA + CEFUROXIMA 750 MG EV 8/8H OU AMPICILINA/SULBACTAM 3G EV 6/6H. ALTERNATIVA: SE INDICAÇÃO DE UTI: AZITROMICINA 500 MG EV 1X/DIA + CEFEPIME 2G EV 12/12H. OBSERVAÇÕES: AVALIAR TROCA PARA TRATAMENTO VO SE MELHORA CLÍNICA APÓS 72 HORAS E CONSIDERAR ALTA HOSPITALAR. O TRATAMENTO COM AZITROMICINA É POR 5 DIAS E OS DEMAIS POR 10 DIAS. 
+- Pneumonia comunitária
+1º escolha: azitromicina 500 mg VO 1x/dia + cefuroxima 750 mg EV 8/8h ou ampicilina/sulbactam 3 g EV 6/6h. Alternativa: se indicação de UTI: azitromicina 500 mg EV 1x/dia + cefepime 2 g EV 12/12h. Observações: avaliar troca para tratamento VO se melhora clínica após 72 horas e considerar alta hospitalar. O tratamento com azitromicina é por 5 dias e os demais por 10 dias.
 
-- PNEUMONIA NOSOCOMIAL 
-1º ESCOLHA: PIPERACILINA/TAZOBACTAM 4,5G 6/6H. ALTERNATIVA: CEFEPIME 2G EV 8/8H. OBSERVAÇÕES: AVALIAR ASSOCIAÇÃO COM VANCOMICINA 1 G EV 12/12H SE NÃO HOUVER MELHORA APÓS 48H DE TRATAMENTO. 
+- Pneumonia nosocomial
+1º escolha: piperacilina/tazobactam 4,5 g 6/6h. Alternativa: cefepime 2 g EV 8/8h. Observações: avaliar associação com vancomicina 1 g EV 12/12h se não houver melhora após 48h de tratamento.
 
-- SEPSE COMUNITÁRIA SEM FOCO DEFINIDO 
-1º ESCOLHA: AMPICILINA/SULBACTAM 3G EV 6/6H OU PIPERACILINA/TAZOBACTAM 4,5G 6/6H. ALTERNATIVA: CEFEPIME 2G EV 8/8H + METRONIDAZOL 500 MG EV 8/8H. OBSERVAÇÕES: COLETAR CULTURAIS ANTES DO INÍCIO DOS ANTIMICROBIANOS E BUSCAR FOCO INFECCIOSO. 
+- Sepse comunitária sem foco definido
+1º escolha: ampicilina/sulbactam 3 g EV 6/6h ou piperacilina/tazobactam 4,5 g 6/6h. Alternativa: cefepime 2 g EV 8/8h + metronidazol 500 mg EV 8/8h. Observações: coletar culturas antes do início dos antimicrobianos e buscar foco infeccioso.
 
-- SEPSE HOSPITALAR SEM FOCO DEFINIDO 
-1º ESCOLHA: VANCOMICINA 1G EV 12/12H + PIPERACILINA/TAZOBACTAM 4,5G 6/6H. ALTERNATIVA: VANCOMICINA 1G EV 12/12H + MEROPENEM 2 G EV 8/8H. OBSERVAÇÕES: AVALIAR USO DE POLIMIXINA B SE MULTIRRESISTENTE E ADEQUAR TERAPIA CONFORME CULTURAIS E ANTIBIOGRAMA.</pre>
+- Sepse hospitalar sem foco definido
+1º escolha: vancomicina 1 g EV 12/12h + piperacilina/tazobactam 4,5 g 6/6h. Alternativa: vancomicina 1 g EV 12/12h + meropenem 2 g EV 8/8h. Observações: avaliar uso de polimixina B se multirresistente e adequar terapia conforme culturas e antibiograma.</pre>
             </div>
         </div>
 
         <!-- ===================== EXAMES DE IMAGEM ===================== -->
         <div id="exames-img" class="section">
-            <h2 class="section-title">Laudos & Exames de Imagem</h2>
+            <h2 class="section-title">Laudos &amp; Exames de Imagem</h2>
 
             <div class="item">
                 <h3>Interpretação de ECG</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre>ELETROCARDIOGRAMA: 
-RITMO SINUSAL (D1, D2 E AVF ONDA P POSITIVA. ONDA P PRECEDE TODO QRS. TODO INTERVALO R-R É REGULAR). 
-FC (CONTAR QUANTIDADE DE INTERVALOS R-R) 
-ONDA P (COMPRIMENTO MAXIMO DE 3 QUADRADINHOS MENORES. ALTURA DE NO MAXIMO 2,5 QUADRADINHOS MENORES). POSITIVA EM D1 E AVF. 
-INTERVALO P-R (NORMAL ENTRE 3 E 5 QUADRADINHOS). 
-COMPLEXO QRS (NORMAL QUANDO TEM ATE 3 QUADRADINHOS). 
-SEGMENTO ST NIVELADO COM A LINHA DE BASE DO ECG (INFRA -SIGNIFICATIVO QUANDO MAIOR OU IGUAL A 0,5MM- OU SUPRADESNIVELAMENTO –QUANDO TIVER 1MM OU MAIS COM EXCEÇÃO DE V2 E V3-). PODE TER DESNIVELAMENTO EM V1 E V2. 
-ONDA T ASSIMETRICA E PODE SEGUIR DIREÇÃO DO QRS E TEM DE ALTURA +/- 30% DA ALTURA DO QRS. POSITIVA EM D1, D2 E AVF. OBRIGATORIAMENTE POSITIVA EM V5 E V6. 
+                <pre>Eletrocardiograma:
+Ritmo sinusal (D1, D2 e aVF onda P positiva. Onda P precede todo QRS. Todo intervalo R-R é regular).
+FC (contar quantidade de intervalos R-R)
+Onda P (comprimento máximo de 3 quadradinhos menores. Altura de no máximo 2,5 quadradinhos menores). Positiva em D1 e aVF.
+Intervalo P-R (normal entre 3 e 5 quadradinhos).
+Complexo QRS (normal quando tem até 3 quadradinhos).
+Segmento ST nivelado com a linha de base do ECG (infra - significativo quando maior ou igual a 0,5 mm - ou supradesnivelamento – quando tiver 1 mm ou mais com exceção de V2 e V3 -). Pode ter desnivelamento em V1 e V2.
+Onda T assimétrica e pode seguir direção do QRS e tem de altura +/- 30% da altura do QRS. Positiva em D1, D2 e aVF. Obrigatoriamente positiva em V5 e V6.
 
-- SOBRECARGA ATRIAL DIREITA: ONDA P MAIS AMPLA, PONTIAGUDA E SIMETRICA. 
-- SOBRECARGA ATRIAL ESQUERDA: ONDA P MAIS ACHATADA E ALONGADA. MAIS DE 2,5MM. SINAL DE MORRIS. COMUM EM PACIENTES COM HAS. 
-- SOBRECARGA VENTRICULAR DIREITA: QRS NEGATIVO EM D1. COMUM EM TEP. S1Q3T3 
-- SOBRECARGA VENTRICULAR ESQUERDA: CRITERIOS DE ROMHILT. 
+- Sobrecarga atrial direita: onda P mais ampla, pontiaguda e simétrica.
+- Sobrecarga atrial esquerda: onda P mais achatada e alongada. Mais de 2,5 mm. Sinal de Morris. Comum em pacientes com HAS.
+- Sobrecarga ventricular direita: QRS negativo em D1. Comum em TEP. S1Q3T3
+- Sobrecarga ventricular esquerda: critérios de Romhilt.
 
-CRITÉRIOS ELETROCARDIOGRÁFICOS DE IAM COM SUPRA DE ST:
+Critérios eletrocardiográficos de IAM com supra de ST:
 - Presença de supradesnivelamento do segmento ST em pelo menos duas derivações contíguas (≥ 1 mm em todas as derivações, exceto V2 e V3, onde se aplicam os seguintes pontos de corte: ≥ 2,5 mm em homens com menos de 40 anos, ≥ 2 mm em homens acima de 40 anos e ≥ 1,5 mm em mulheres).
 - Presença de infradesnivelamento do segmento ST em V1-V3 pode sugerir IAM posterior.
 - Presença de bloqueio completo do ramo esquerdo (BRE) novo ou presumivelmente novo.</pre>
@@ -1519,41 +1749,119 @@ CRITÉRIOS ELETROCARDIOGRÁFICOS DE IAM COM SUPRA DE ST:
             <div class="item">
                 <h3>Radiografia, USG e TC</h3>
                 <button class="copy-btn" onclick="copyText(this)">Copiar</button>
-                <pre>RADIOGRAFIA: RADIOPACO X RADIOLÚCIDO (PRETO) 
-USG: OPOECOICO X HIPERECOICO 
-TC: HIPODENSO X HIPERDENSO 
-RESSONANCIA: HIPOINTENSO X HIPERINTENSO 
+                <pre>Radiografia: radiopaco x radiolúcido (preto)
+USG: hipoecoico x hiperecoico
+TC: hipodenso x hiperdenso
+Ressonância: hipointenso x hiperintenso
 
-• CORONAL: COROA 
-• SAGITAL: SIDE
+• Coronal: coroa
+• Sagital: side
 
-DESCRIÇÃO DE RX DE TÓRAX COM PNEUMONIA BACTERIANA:
-Consolidações pulmonares, Opacidades em vidro fosco, Derrame pleural, Infiltrados pulmonares, Área de consolidação arredondada ou oval.</pre>
+Descrição de RX de tórax com pneumonia bacteriana:
+Consolidações pulmonares, opacidades em vidro fosco, derrame pleural, infiltrados pulmonares, área de consolidação arredondada ou oval.</pre>
             </div>
         </div>
 
-    </div>
+    </main>
+</div>
 
-    <script>
-        function showSection(id, btn) {
-            document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            btn.classList.add('active');
+<script>
+    (function () {
+        'use strict';
+        var sidebar = document.getElementById('sidebar');
+        var backdrop = document.getElementById('backdrop');
+        var menuBtn = document.getElementById('menuBtn');
+        var content = document.getElementById('content');
+        var MOBILE_BREAKPOINT = 900;
+
+        function isMobile() { return window.innerWidth <= MOBILE_BREAKPOINT; }
+        function openMenu() {
+            sidebar.classList.add('open');
+            backdrop.classList.add('show');
+            menuBtn.setAttribute('aria-expanded', 'true');
+        }
+        function closeMenu() {
+            sidebar.classList.remove('open');
+            backdrop.classList.remove('show');
+            menuBtn.setAttribute('aria-expanded', 'false');
+        }
+        function toggleMenu() {
+            if (sidebar.classList.contains('open')) closeMenu();
+            else openMenu();
+        }
+        menuBtn.addEventListener('click', toggleMenu);
+        backdrop.addEventListener('click', closeMenu);
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && sidebar.classList.contains('open')) closeMenu();
+        });
+        window.addEventListener('resize', function () {
+            if (!isMobile()) closeMenu();
+        });
+
+        window.showSection = function (id, btn) {
+            document.querySelectorAll('.section').forEach(function (sec) { sec.classList.remove('active'); });
+            document.querySelectorAll('.nav-btn').forEach(function (b) { b.classList.remove('active'); });
+            var target = document.getElementById(id);
+            if (target) target.classList.add('active');
+            if (btn) btn.classList.add('active');
+            if (content) content.scrollTop = 0;
+            if (isMobile()) closeMenu();
+        };
+
+        function fallbackCopy(text, onSuccess) {
+            var textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.setAttribute('readonly', '');
+            textarea.style.position = 'fixed';
+            textarea.style.top = '0';
+            textarea.style.left = '0';
+            textarea.style.width = '1px';
+            textarea.style.height = '1px';
+            textarea.style.opacity = '0';
+            textarea.style.pointerEvents = 'none';
+            document.body.appendChild(textarea);
+            var success = false;
+            try {
+                if (navigator.userAgent.match(/ipad|ipod|iphone/i)) {
+                    var range = document.createRange();
+                    range.selectNodeContents(textarea);
+                    var sel = window.getSelection();
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                    textarea.setSelectionRange(0, textarea.value.length);
+                } else {
+                    textarea.select();
+                }
+                success = document.execCommand('copy');
+            } catch (err) { success = false; }
+            document.body.removeChild(textarea);
+            if (success && typeof onSuccess === 'function') onSuccess();
+            else alert('Não foi possível copiar o texto. Selecione manualmente e use Ctrl+C / Cmd+C.');
         }
 
-        function copyText(button) {
-            const text = button.nextElementSibling.innerText;
-            navigator.clipboard.writeText(text).then(() => {
-                const oldText = button.innerText;
+        window.copyText = function (button) {
+            var pre = button.nextElementSibling;
+            if (!pre) return;
+            var text = pre.innerText || pre.textContent || '';
+            var showFeedback = function () {
+                var old = button.innerText;
                 button.innerText = 'Copiado!';
                 button.style.background = 'var(--success)';
-                setTimeout(() => {
-                    button.innerText = oldText;
+                setTimeout(function () {
+                    button.innerText = old;
                     button.style.background = 'var(--accent)';
                 }, 2000);
-            });
-        }
-    </script>
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(showFeedback).catch(function () {
+                    fallbackCopy(text, showFeedback);
+                });
+            } else {
+                fallbackCopy(text, showFeedback);
+            }
+        };
+    })();
+</script>
+
 </body>
 </html>
